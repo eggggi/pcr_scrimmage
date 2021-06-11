@@ -1,7 +1,22 @@
-from hoshino.modules.epck.util import Dict
-from tokenize import group
+'''
+<A little game base on hoshino_bot, gameplay like RichMan>
+Copyright (C) <2021/06/11>  <eggggi>
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+'''
+
 from typing import List
-from hoshino.util import delete_msg
 import os
 import asyncio
 import math
@@ -15,7 +30,7 @@ from hoshino.modules.priconne import chara
 
 from .role import (ROLE, 
 				   EFFECT_DEFENSIVE, EFFECT_ATTACK, EFFECT_DISTANCE, EFFECT_HEALTH, EFFECT_MOVE, EFFECT_TP,
-				   EFFECT_MOVE_GOAL, EFFECT_OUT_TP, EFFECT_OUT_TURN, 
+				   EFFECT_MOVE_GOAL, EFFECT_OUT_TP, EFFECT_OUT_TURN, EFFECT_IGNORE_DIST,
 				   TRIGGER_ME, TRIGGER_ALL_EXCEPT_ME, TRIGGER_ALL, TRIGGER_SELECT, TRIGGER_NEAR)
 from .runway_case import (CASE_NONE, CASE_ATTACK, CASE_DEFENSIVE, CASE_HEALTH, 
 						  CASE_MOVE, CASE_TP, RUNWAY_CASE)
@@ -488,7 +503,8 @@ class PCRScrimmage:
 				if "passive" in skill and len(skill["passive"]) != 0:
 					for passive_skill_id in skill["passive"]:
 						passive_skill_effect = use_skill_player.passive_skills[passive_skill_id]["effect"]
-						if EFFECT_MOVE_GOAL in passive_skill_effect:
+						if (EFFECT_MOVE_GOAL   in passive_skill_effect or
+							EFFECT_IGNORE_DIST in passive_skill_effect):
 							disregard_dist = True
 							break
 				
@@ -1163,16 +1179,13 @@ async def game_help(bot, ev: CQEvent):
 	如：凯露 / 黑猫
 	（名字和外号都行）
 三、对战阶段：
-①、丢色子阶段：
 	1、丢色子
-	2、投降 / 认输
-②、放技能阶段：
-	1、（技能编号） @xxx
+	2、（技能编号） @xxx
 	如：1 @xxx
 	发送技能编号并@目标，如果这个技能不需要指定目标，直接发送技能编号即可
-③、对战期间任何阶段：
-	1、查看属性
+	3、查看属性
 	可查看自己当前角色详细属性
+	4、投降 / 认输
 '''
 	await bot.send(ev, msg)
 
