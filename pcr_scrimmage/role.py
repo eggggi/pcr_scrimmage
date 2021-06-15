@@ -200,7 +200,7 @@ ROLE = {
                 "passive": [0, 1],  # 一个技能有多个效果且包括向目标移动，向目标移动效果必须最先触发
 
                 "effect": {
-                    EFFECT_HEALTH: (-150, 1, False),
+                    EFFECT_HEALTH: (-150, 1.0, False),
                 }
             }
         ],
@@ -230,25 +230,25 @@ ROLE = {
         "active_skills": [
             {
                 "name": "破甲突刺",
-                "text": "无视距离，对离自己最近的目标造成100(+0.5攻击力)伤害，并降低目标50点防御力",
+                "text": "无视距离，对离自己最近的目标造成100(+1.0攻击力)伤害，并降低目标50点防御力",
                 "tp_cost": 20,
                 "trigger": TRIGGER_NEAR,
                 "passive": [],
 
                 "effect": {
-                    EFFECT_HEALTH: (-100, 0.5, False),
+                    EFFECT_HEALTH: (-100, 1.0, False),
                     EFFECT_DEFENSIVE: -50
                 }
             },
             {
                 "name": "极·鬼剑术-暴风式",
-                "text": "对自己以外的所有人造成200(+0.8攻击力)真实伤害",
+                "text": "对自己以外的所有人造成200(+1.0 攻击力)真实伤害",
                 "tp_cost": 60,
                 "trigger": TRIGGER_ALL_EXCEPT_ME,
                 "passive": [],
 
                 "effect": {
-                    EFFECT_HEALTH: (-200, 1, True)
+                    EFFECT_HEALTH: (-200, 1.0, True)
                 }
             }
         ],
@@ -256,7 +256,7 @@ ROLE = {
     },
     1002: {
         "name": "优衣",
-        "health": 1200,
+        "health": 1000,
         "distance": 8,
         "attack": 80,
         "defensive": 60,
@@ -265,20 +265,20 @@ ROLE = {
         "active_skills": [
             {
                 "name": "花瓣射击",
-                "text": "对目标造成100(+1.5攻击力)伤害，并降低目标20点攻击力和20点TP",
+                "text": "对目标造成100(+1.5攻击力)伤害，并降低目标10点攻击力和10点TP",
                 "tp_cost": 20,
                 "trigger": TRIGGER_SELECT,
                 "passive": [],
 
                 "effect": {
                     EFFECT_HEALTH: (-100, 1.5, False),
-                    EFFECT_ATTACK: -20,
-                    EFFECT_TP: -20
+                    EFFECT_ATTACK: -10,
+                    EFFECT_TP: -10
                 }
             },
             {
                 "name": "全体治愈",
-                "text": "全体回复100生命值，自己额外回复200生命值，除自己外减少3点攻击距离",
+                "text": "全体回复100生命值，自己额外回复100生命值，除自己外减少3点攻击距离",
                 "tp_cost": 50,
                 "trigger": TRIGGER_ALL,
                 "passive": [0, 1],
@@ -298,7 +298,7 @@ ROLE = {
             {
                 "trigger": TRIGGER_ME,
                 "effect": {
-                    EFFECT_HEALTH: (200, 0, False)
+                    EFFECT_HEALTH: (100, 0, False)
                 }
             }
         ],
