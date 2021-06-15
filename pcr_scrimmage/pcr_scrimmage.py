@@ -139,11 +139,12 @@ MAX_PLAYER = 4      # 最大玩家数量
 MAX_TP = 100        # tp值上限
 MAX_DIST = 15       # 最大攻击距离
 ONE_ROUND_TP = 10   # 单回合获得tp量
-FOUR_ROUND_DISTANCE = 2     # 每隔4回合增加的攻击距离
-FOUR_ROUND_ATTACK = 10      # 每隔4回合增加的攻击力
+ROUND_DISTANCE = 2  # 每隔 x 回合增加的攻击距离(x 为当前存活人数)
+ROUND_ATTACK = 10   # 每隔 x 回合增加的攻击力
 HIT_DOWN_TP = 20    # 击倒获得的tp
 
 RET_ERROR = -1      # 错误
+RET_NORMAL = 0
 RET_SUCCESS = 1     # 成功
 
 
@@ -312,19 +313,28 @@ class Role:
 class PCRScrimmage:
     # 初始化
     def __init__(self, gid, manager, room_master, across_range=10, vertical_range=10, grid_size=50) -> None:
+        """初始化(空模板)
+
+        :param gid: 群号
+        :param manager: 管理器
+        :param room_master: 房主
+        :param across_range:
+        :param vertical_range:
+        :param grid_size:
+        """
         ##核心数据
-        self.gid = gid  # 群号
+        self.gid = gid      # 群号
         self.mgr = manager  # 管理器
         self.room_master = room_master  # 房主
-        self.player_list = {}  # 玩家列表  ####这个东西不能迭代values，不懂原理
-        self.now_statu = NOW_STATU_WAIT  # 当前游戏状态
-        self.now_turn = 0  # 现在是玩家x的回合
-        self.dice_num = 0  # 已丢色子次数的总数
-        self.lock_turn = 0  # 回合锁定，x回合内都是同个玩家
+        self.player_list = {}           # 玩家列表  ####这个东西不能迭代 values，不懂原理
+        self.now_statu = NOW_STATU_WAIT # 当前游戏状态
+        self.now_turn = 0   # 现在是玩家 x 的回合
+        self.dice_num = 0   # 已丢色子次数的总数
+        self.lock_turn = 0  # 回合锁定，x 回合内都是同个玩家
         self.now_playing_players = []  # 当前正在游玩的玩家id	[xxx, xxx]
-        self.rank = {}  # 结算排行	{1:xxx,2:xxx}
+        self.rank = {}      # 结算排行	{1:xxx,2:xxx}
 
-        self.user_card_dict = {}  # 群内所有成员信息
+        self.user_card_dict = {}        # 群内所有成员信息
 
         # 初始化跑道，总共36个格子
         self.runway = [{"players": [], "case": 0} for i in range((across_range - 1) * 4)]
@@ -419,8 +429,8 @@ class PCRScrimmage:
     # 回合改变，到下一个玩家
     def turnChange(self):
         now_turn_player = self.getNowTurnPlayerObj()
-        if now_turn_player.now_stage != NOW_STAGE_OUT:  # 如果当前玩家已经出局，则不改变状态
-            now_turn_player.stageChange(NOW_STAGE_WAIT)  # 已结束的玩家
+        if now_turn_player.now_stage != NOW_STAGE_OUT:      # 如果当前玩家已经出局，则不改变状态
+            now_turn_player.stageChange(NOW_STAGE_WAIT)     # 已结束的玩家
         else:
             self.lock_turn = 0  # 如果玩家已出局，则取消回合锁定
 
@@ -434,8 +444,8 @@ class PCRScrimmage:
             self.now_turn += 1
             if self.now_turn >= len(self.player_list):
                 self.now_turn = 0
-            next_turn_player = self.getNowTurnPlayerObj()  # 下一个玩家
-            if next_turn_player.now_stage != NOW_STAGE_OUT:  # 跳过已出局的玩家
+            next_turn_player = self.getNowTurnPlayerObj()       # 下一个玩家
+            if next_turn_player.now_stage != NOW_STAGE_OUT:     # 跳过已出局的玩家
                 if self.lock_turn > 0:  # 检查是否锁定了当前回合
                     now_turn_player.stageChange(NOW_STAGE_DICE)
                     self.now_turn = now_turn_player.player_num
@@ -464,10 +474,11 @@ class PCRScrimmage:
         for iter_player_id in self.player_list:  # 每丢1次色子，所有玩家增加10点tp
             self.getPlayerObj(iter_player_id).tpChange(ONE_ROUND_TP)
         self.dice_num += 1
-        if self.dice_num > 4:
-            for iter_player_id in self.player_list:  # 每丢4次色子，所有玩家增加2点攻击距离
-                self.getPlayerObj(iter_player_id).distanceChange(FOUR_ROUND_DISTANCE)
-                self.getPlayerObj(iter_player_id).attackChange(FOUR_ROUND_ATTACK)
+        if self.dice_num % (len(self.now_playing_players) + 1) == 0:
+            # 每丢 x 次色子，所有玩家增加 2 点攻击距离 10 点攻击力
+            for iter_player_id in self.now_playing_players:
+                self.getPlayerObj(iter_player_id).distanceChange(ROUND_DISTANCE)
+                self.getPlayerObj(iter_player_id).attackChange(ROUND_ATTACK)
             self.dice_num = 1
 
         await self.caseTrigger(player, bot, ev)
@@ -647,7 +658,7 @@ class PCRScrimmage:
     # 技能效果生效
     def skillEffect(self, use_skill_player: Role, goal_player: Role, skill_effect, back_msg: List):
         if goal_player.now_stage == NOW_STAGE_OUT:
-            return
+            return RET_NORMAL, ''
 
         use_player_name = uid2card(use_skill_player.user_id, self.user_card_dict)
         goal_player_name = uid2card(goal_player.user_id, self.user_card_dict)
