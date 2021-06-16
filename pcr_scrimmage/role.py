@@ -1,6 +1,6 @@
 ##可用角色
 
-'''
+"""
 ##可用角色可自定义增加，详细看下面
 
 基础属性：
@@ -37,7 +37,7 @@
 		move_goal			向目标移动（一个技能有多个效果且包括向目标移动，向目标移动效果必须最先触发）
 							这个效果必须放在被动
 		ignore_dist			无视距离，参数填啥都行，不会用到
-		
+
 		make_it_out_tp		令目标出局时tp变动
 		make_it_out_turn	令目标出局时锁定回合
 
@@ -51,30 +51,31 @@
 
 		near				离自己最近
 
-'''
-EFFECT_HEALTH = "health_change"			#生命值改变，正数为回血，负数为造成伤害		tuple元组 (数值，加成比例, 是否是真实伤害)
+"""
 
-EFFECT_DEFENSIVE = "defensive_change"	#防御改变，正数为增加，负数为减少 			number ↓同理
+
+EFFECT_HEALTH = "health_change"         # 生命值改变，正数为回血，负数为造成伤害		tuple元组 (数值，加成比例, 是否是真实伤害)
+
+EFFECT_DEFENSIVE = "defensive_change"   # 防御改变，正数为增加，负数为减少 			number ↓同理
 EFFECT_DISTANCE = "distance_change"
 EFFECT_ATTACK = "attack_change"
-EFFECT_TP = "tp_change"					#↑同理
+EFFECT_TP = "tp_change"  # ↑同理
 
-EFFECT_MOVE = "move"					#移动，正数为前进负数为后退（触发跑道事件）	number
-EFFECT_MOVE_GOAL = "move_goal"			#向目标移动（一个技能有多个效果且包括向目标移动，向目标移动效果必须最先触发） tuple元组(移动距离，是否无视攻击范围)
-										#这个效果必须放在被动（不触发跑道事件）
-EFFECT_IGNORE_DIST = "ignore_dist"		#无视距离效果，参数填啥都行，不会用到
+EFFECT_MOVE = "move"  # 移动，正数为前进负数为后退（触发跑道事件）	number
+EFFECT_MOVE_GOAL = "move_goal"  # 向目标移动（一个技能有多个效果且包括向目标移动，向目标移动效果必须最先触发） tuple元组(移动距离，是否无视攻击范围)
+# 这个效果必须放在被动（不触发跑道事件）
+EFFECT_IGNORE_DIST = "ignore_dist"  # 无视距离效果，参数填啥都行，不会用到
 
-EFFECT_OUT_TP = "make_it_out_tp"		#令目标出局时tp变动		number
-EFFECT_OUT_TURN = "make_it_out_turn"	#令目标出局时锁定回合	number（锁定回合：不会切换到下一个玩家，当前玩家继续丢色子和放技能）
+EFFECT_OUT_TP = "make_it_out_tp"  # 令目标出局时tp变动		number
+EFFECT_OUT_TURN = "make_it_out_turn"  # 令目标出局时锁定回合	number（锁定回合：不会切换到下一个玩家，当前玩家继续丢色子和放技能）
 
+TRIGGER_SELECT = "select"  # 选择目标
+TRIGGER_ALL = "all"  # 对所有人有效(包括自己)
+TRIGGER_ALL_EXCEPT_ME = "all_except_me"  # 对所有人有效(除了自己)
+TRIGGER_ME = "me"  # 只对自己有效
+TRIGGER_NEAR = "near"  # 离自己最近的目标
 
-TRIGGER_SELECT = "select"				#选择目标
-TRIGGER_ALL = "all"						#对所有人有效(包括自己)
-TRIGGER_ALL_EXCEPT_ME = "all_except_me"	#对所有人有效(除了自己)
-TRIGGER_ME = "me"						#只对自己有效
-TRIGGER_NEAR = "near"					#离自己最近的目标
-
-
+# 角色字典
 ROLE = {
 	#注意：id要和_pcr_data.py里对应角色一样
 	1060:{
