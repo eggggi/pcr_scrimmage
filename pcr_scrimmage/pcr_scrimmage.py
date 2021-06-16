@@ -896,6 +896,24 @@ class PCRScrimmage:
 				self.drawBox(100, 10,  self.grid_size * 2 + i * 200, self.grid_size * 4   + j * 190,      COLOR_BLACK,  STATU_LINE_WDITH)#TP框
 		#填充跑道事件文字
 		self.fillCaseText()
+        # 追逐方向绘制
+        width = (self.vertical_range_x + 2) * self.grid_size
+        height = (self.across_range_y + 2) * self.grid_size
+        offset = 20 # 直线相对图像边框偏移量
+        # 绘制折线段
+        self.draw.line([
+            (width-offset-self.grid_size, offset),
+            (width-offset, offset),
+            (width-offset, offset+self.grid_size)
+        ], fill=COLOR_BLACK, width=RUNWAY_LINE_WDITH)
+        # 绘制箭头
+        offset_arrow_x = 5
+        offset_arrow_y = 10
+        self.draw.line([
+            (width-offset-offset_arrow_x, offset+self.grid_size-offset_arrow_y),
+            (width - offset, offset + self.grid_size),
+            (width-offset+offset_arrow_x, offset+self.grid_size-offset_arrow_y)
+        ], fill=COLOR_BLACK, width=RUNWAY_LINE_WDITH)
 
 	#画盒子（画框）
 	def drawBox(self, length, width, offset_x, offset_y, color = COLOR_BLACK, line_width = RUNWAY_LINE_WDITH, is_now = False):
