@@ -38,7 +38,7 @@ from .runway_case import (CASE_NONE, CASE_ATTACK, CASE_DEFENSIVE, CASE_HEALTH,
 from .get_gold import (ScoreCounter, daily_card_limiter, 
 						MAX_GUESS_NUM, GOLD_DICT)
 
-sv = Service('pcr_scrimmage', manage_priv=priv.ADMIN, enable_on_default=True, visible=False)
+sv = Service('pcr_scrimmage', manage_priv=priv.ADMIN, enable_on_default=True, visible=True)
 FILE_PATH = os.path.dirname(__file__)
 
 IMAGE_PATH = R.img('pcr_scrimmage').path
@@ -48,13 +48,13 @@ if not os.path.exists(IMAGE_PATH):
 	logger.info('create folder succeed')
 
 async def get_user_card_dict(bot, group_id):
-    mlist = await bot.get_group_member_list(group_id=group_id)
-    d = {}
-    for m in mlist:
-        d[m['user_id']] = m['card'] if m['card']!='' else m['nickname']
-    return d
+	mlist = await bot.get_group_member_list(group_id=group_id)
+	d = {}
+	for m in mlist:
+		d[m['user_id']] = m['card'] if m['card']!='' else m['nickname']
+	return d
 def uid2card(uid, user_card_dict):
-    return str(uid) if uid not in user_card_dict.keys() else user_card_dict[uid]
+	return str(uid) if uid not in user_card_dict.keys() else user_card_dict[uid]
 
 #防御力计算机制。
 #100点防御力内，每1点防御力增加0.1%伤害减免；
@@ -130,7 +130,6 @@ class Role:
 		self.attack = 0			#攻击力
 		self.defensive = 0		#防御力
 		self.tp = 0				#tp值（能量值）
-		self.save_tp = 0		#保存的tp值
 
 		self.active_skills = []			#技能列表
 		self.passive_skills = []		#被动列表
@@ -187,14 +186,9 @@ class Role:
 		self.defensive += num
 		if self.defensive < 0:
 			self.defensive = 0
-	def tpChange(self, num, is_save = False):
+	def tpChange(self, num):
 		if self.now_stage == NOW_STAGE_OUT: return
-		if is_save:
-			self.save_tp += num
-			return
 		self.tp += num
-		self.tp += self.save_tp
-		self.save_tp = 0
 		if self.tp > MAX_TP:
 			self.tp = MAX_TP
 		elif self.tp < 0:
@@ -463,6 +457,9 @@ class PCRScrimmage:
 			if skill_tp_cost > use_player_obj.tp:		#检查tp是否足够
 				await bot.send(ev, 'tp不足，无法使用这个技能')
 				return RET_ERROR
+				
+			#先扣除tp
+			use_player_obj.tpChange(-skill_tp_cost)
 			
 			use_player_name = uid2card(use_player_obj.user_id, self.user_card_dict)
 			use_skill_nale = use_player_obj.active_skills[real_skill_id]["name"]
@@ -472,9 +469,10 @@ class PCRScrimmage:
 			ret, msg = self.skillTrigger(use_player_obj, goal_player_id, real_skill_id, False, back_msg)
 			if ret == RET_ERROR:
 				await bot.send(ev, msg)
+				#技能释放失败，返还tp
+				use_player_obj.tpChange(skill_tp_cost)
 				return ret
 			await bot.send(ev, '\n'.join(back_msg))
-			use_player_obj.tpChange(-skill_tp_cost)
 			
 		self.turnChange()	#回合切换
 		self.refreshNowImageStatu()	#刷新当前显示状态
@@ -498,6 +496,8 @@ class PCRScrimmage:
 					return RET_ERROR, '目标不在房间里'
 				if goal_player_obj.now_stage == NOW_STAGE_OUT:
 					return RET_ERROR, '目标已出局'
+				if goal_player_obj == use_skill_player:
+					return RET_ERROR, '不能选择自己'
 
 				#检查被动技能里是否带有无视距离的技能效果
 				disregard_dist = False
@@ -654,14 +654,14 @@ class PCRScrimmage:
 		
 		#通用击倒tp
 		if goal_player.now_stage == NOW_STAGE_OUT:
-			use_skill_player.tpChange(HIT_DOWN_TP, True)	
+			use_skill_player.tpChange(HIT_DOWN_TP)	
 			back_msg.append(f'[CQ:at,qq={goal_player.user_id}]出局')
 
 		#效果击倒tp
 		if EFFECT_OUT_TP in skill_effect:
 			if goal_player.now_stage == NOW_STAGE_OUT:
 				num = skill_effect[EFFECT_OUT_TP]
-				use_skill_player.tpChange(num, True)
+				use_skill_player.tpChange(num)
 				if num < 0:
 					back_msg.append(f'{goal_player_name}被击倒，{use_player_name}降低了{abs(num)}点TP')
 				else:

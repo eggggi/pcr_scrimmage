@@ -29,86 +29,86 @@ from hoshino import R, Service, priv, log
 from hoshino.modules.priconne import chara
 
 from .role import (
-                    ROLE,    # 角色字典
-                    EFFECT_DEFENSIVE,    # 防御改变,   正数为增加，负数为减少  number
-                    EFFECT_ATTACK,       # 攻击力改变, 正数为增加，负数为减少  number
-                    EFFECT_DISTANCE,     # 距离改变,   正数为增加，负数为减少  number
-                    EFFECT_HEALTH,       # 生命值改变, 正数为回血，负数为造成伤害   tuple元组 (数值，加成比例, 是否是真实伤害)
-                    EFFECT_TP,           # TP 改变,   正数为增加，负数为减少  number
-                    EFFECT_MOVE,         # 移动, 正数为前进负数为后退（触发跑道事件）	number
-                    EFFECT_MOVE_GOAL,    # 向目标移动（一个技能有多个效果且包括向目标移动，向目标移动效果必须最先触发） tuple元组(移动距离，是否无视攻击范围)
-                    EFFECT_OUT_TP,       # 令目标出局时tp变动    number
-                    EFFECT_OUT_TURN,     # 令目标出局时锁定回合    number（锁定回合：不会切换到下一个玩家，当前玩家继续丢色子和放技能）
-                    EFFECT_IGNORE_DIST,  # 无视距离效果，参数填啥都行，不会用到    [PS: 这个效果必须放在被动（不触发跑道事件）]
-                    TRIGGER_ME,          # 只对自己有效
-                    TRIGGER_ALL_EXCEPT_ME,   # 对所有人有效(除了自己)
-                    TRIGGER_ALL,         # 对所有人有效(包括自己)
-                    TRIGGER_SELECT,      # 选择目标
-                    TRIGGER_NEAR         # 离自己最近的目标
-                   )
+					ROLE,    # 角色字典
+					EFFECT_DEFENSIVE,    # 防御改变,   正数为增加，负数为减少  number
+					EFFECT_ATTACK,       # 攻击力改变, 正数为增加，负数为减少  number
+					EFFECT_DISTANCE,     # 距离改变,   正数为增加，负数为减少  number
+					EFFECT_HEALTH,       # 生命值改变, 正数为回血，负数为造成伤害   tuple元组 (数值，加成比例, 是否是真实伤害)
+					EFFECT_TP,           # TP 改变,   正数为增加，负数为减少  number
+					EFFECT_MOVE,         # 移动, 正数为前进负数为后退（触发跑道事件）	number
+					EFFECT_MOVE_GOAL,    # 向目标移动（一个技能有多个效果且包括向目标移动，向目标移动效果必须最先触发） tuple元组(移动距离，是否无视攻击范围)
+					EFFECT_OUT_TP,       # 令目标出局时tp变动    number
+					EFFECT_OUT_TURN,     # 令目标出局时锁定回合    number（锁定回合：不会切换到下一个玩家，当前玩家继续丢色子和放技能）
+					EFFECT_IGNORE_DIST,  # 无视距离效果，参数填啥都行，不会用到    [PS: 这个效果必须放在被动（不触发跑道事件）]
+					TRIGGER_ME,          # 只对自己有效
+					TRIGGER_ALL_EXCEPT_ME,   # 对所有人有效(除了自己)
+					TRIGGER_ALL,         # 对所有人有效(包括自己)
+					TRIGGER_SELECT,      # 选择目标
+					TRIGGER_NEAR         # 离自己最近的目标
+				   )
 from .runway_case import (
-                            CASE_NONE,      # 0: 占个空位，代表不触发事件
-                            CASE_HEALTH,    # 1: 生命值事件
-                            CASE_DEFENSIVE, # 2: 防御力事件
-                            CASE_ATTACK,    # 3: 攻击力事件
-                            CASE_TP,        # 4: tp 值事件
-                            CASE_MOVE,      # 移动位置事件
-                            RUNWAY_CASE     # 事件列表字典 [{},{},...]
-                          )
+							CASE_NONE,      # 0: 占个空位，代表不触发事件
+							CASE_HEALTH,    # 1: 生命值事件
+							CASE_DEFENSIVE, # 2: 防御力事件
+							CASE_ATTACK,    # 3: 攻击力事件
+							CASE_TP,        # 4: tp 值事件
+							CASE_MOVE,      # 移动位置事件
+							RUNWAY_CASE     # 事件列表字典 [{},{},...]
+						  )
 
-# 模块名为 pcr_scrimmage, 功能默认启用, 默认在功能列表(lssv)中不可见
-sv = Service('pcr_scrimmage', manage_priv=priv.ADMIN, enable_on_default=True, visible=False)
+# 模块名为 pcr_scrimmage, 功能默认启用, 默认在功能列表(lssv)中可见
+sv = Service('pcr_scrimmage', manage_priv=priv.ADMIN, enable_on_default=True, visible=True)
 FILE_PATH = os.path.dirname(__file__)       # 定义当前文件(pcr_scrimmage.py)路径
 IMAGE_PATH = R.img('pcr_scrimmage').path    # 获取 PCR 大乱斗资源文件存储根目录
 logger = log.new_logger('pcr_scrimmage')
 
 # 如果在 hoshino 的 res 目录下没有 pcr_scrimmage 路径则新建该目录
 if not os.path.exists(IMAGE_PATH):
-    os.mkdir(IMAGE_PATH)
-    logger.info('create folder succeed')
+	os.mkdir(IMAGE_PATH)
+	logger.info('create folder succeed')
 
 
 # 获取成员及其卡片字典
 async def get_user_card_dict(bot, group_id) -> dict:
-    """获取成员及其卡片字典
-    """
-    mlist = await bot.get_group_member_list(group_id=group_id)  # 根据群号获取成员列表
-    d = {}
-    for m in mlist:
-        d[m['user_id']] = m['card'] if m['card'] != '' else m['nickname']
-    return d
+	"""获取成员及其卡片字典
+	"""
+	mlist = await bot.get_group_member_list(group_id=group_id)  # 根据群号获取成员列表
+	d = {}
+	for m in mlist:
+		d[m['user_id']] = m['card'] if m['card'] != '' else m['nickname']
+	return d
 
 
 # 返回 uid
 def uid2card(uid, user_card_dict):
-    """返回 uid
-    存疑, 这句没太看懂;
-    为什么 uid 不在字典键里却可以获取到 user_card_dict[uid] ?
-    """
-    return str(uid) if uid not in user_card_dict.keys() else user_card_dict[uid]
+	"""返回 uid
+	存疑, 这句没太看懂;
+	为什么 uid 不在字典键里却可以获取到 user_card_dict[uid] ?
+	"""
+	return str(uid) if uid not in user_card_dict.keys() else user_card_dict[uid]
 
 
 # 防御力计算机制
 def hurt_defensive_calculate(hurt, defensive):
-    """防御力计算机制
+	"""防御力计算机制
 
-    100点防御力内，每1点防御力增加0.1%伤害减免；
+	100点防御力内，每1点防御力增加0.1%伤害减免；
 
-    100点防御力后，每1点防御力增加0.05%伤害减免；
+	100点防御力后，每1点防御力增加0.05%伤害减免；
 
-    最高有效防御力为1000（防御力可无限提升，但最高只能获得55%伤害减免）
+	最高有效防御力为1000（防御力可无限提升，但最高只能获得55%伤害减免）
 
-    :return: 减伤后的伤害值
-    """
-    percent = 0.0
-    if defensive <= 100:
-        percent = defensive * 0.001
-    else:
-        if defensive <= 1000:
-            percent = 100 * 0.001 + (defensive - 100) * 0.0005
-        else:
-            percent = 100 * 0.001 + 900 * 0.0005
-    return hurt - hurt * percent
+	:return: 减伤后的伤害值
+	"""
+	percent = 0.0
+	if defensive <= 100:
+		percent = defensive * 0.001
+	else:
+		if defensive <= 1000:
+			percent = 100 * 0.001 + (defensive - 100) * 0.0005
+		else:
+			percent = 100 * 0.001 + 900 * 0.0005
+	return hurt - hurt * percent
 
 
 ###显示偏移###	（可以改）
@@ -156,163 +156,155 @@ RET_SUCCESS = 1     # 成功
 
 # 角色
 class Role:
-    def __init__(self, user_id) -> None:
-        """初始化大乱斗玩家及其角色(空模板)
-        """
-        self.user_id = user_id  # 玩家的qq号
-        self.role_id = 0        # pcr角色编号
-        self.role_icon = None   # 角色头像
-        self.player_num = 0     # 玩家在这个房间的编号
-        self.room_obj = None    # 房间对象
+	def __init__(self, user_id) -> None:
+		"""初始化大乱斗玩家及其角色(空模板)
+		"""
+		self.user_id = user_id  # 玩家的qq号
+		self.role_id = 0        # pcr角色编号
+		self.role_icon = None   # 角色头像
+		self.player_num = 0     # 玩家在这个房间的编号
+		self.room_obj = None    # 房间对象
 
-        self.name = ''          # 角色名
-        self.max_health = 0     # 最大生命值
-        self.distance = 0       # 攻击距离
-        self.attack = 0         # 攻击力
-        self.defensive = 0      # 防御力
-        self.tp = 0             # tp 值（能量值）
-        self.save_tp = 0        # 保存的 tp 值
+		self.name = ''          # 角色名
+		self.max_health = 0     # 最大生命值
+		self.distance = 0       # 攻击距离
+		self.attack = 0         # 攻击力
+		self.defensive = 0      # 防御力
+		self.tp = 0             # tp 值（能量值）
 
-        self.active_skills = []     # 技能列表
-        self.passive_skills = []    # 被动列表
+		self.active_skills = []     # 技能列表
+		self.passive_skills = []    # 被动列表
 
-        self.now_health = 0     # 当前生命值
-        self.now_location = 0   # 当前位置
-        self.now_stage = NOW_STAGE_WAIT  # 当前处于什么阶段
+		self.now_health = 0     # 当前生命值
+		self.now_location = 0   # 当前位置
+		self.now_stage = NOW_STAGE_WAIT  # 当前处于什么阶段
 
-    def initData(self, role_id, role_info, room_obj):
-        """选择角色后对数据的初始化
-        """
-        role_data = ROLE[role_id]   # 从角色字典中获取角色数据
-        if role_data:
-            self.role_id = role_id
-            self.role_icon = role_info.icon.open()
-            self.room_obj = room_obj
+	def initData(self, role_id, role_info, room_obj):
+		"""选择角色后对数据的初始化
+		"""
+		role_data = ROLE[role_id]   # 从角色字典中获取角色数据
+		if role_data:
+			self.role_id = role_id
+			self.role_icon = role_info.icon.open()
+			self.room_obj = room_obj
 
-            self.name = role_data['name']
-            self.max_health = role_data['health']
-            self.distance = role_data['distance']
-            self.attack = role_data['attack']
-            self.defensive = role_data['defensive']
-            self.tp = role_data['tp']
+			self.name = role_data['name']
+			self.max_health = role_data['health']
+			self.distance = role_data['distance']
+			self.attack = role_data['attack']
+			self.defensive = role_data['defensive']
+			self.tp = role_data['tp']
 
-            self.active_skills = role_data['active_skills']
-            self.passive_skills = role_data['passive_skills']
+			self.active_skills = role_data['active_skills']
+			self.passive_skills = role_data['passive_skills']
 
-            self.now_health = self.max_health
+			self.now_health = self.max_health
 
-    def healthChange(self, num):
-        """生命值及其相关变动处理
-        生命值变动, 受伤回复 TP, 生命值归零出局
-        """
-        # 当前玩家处于出局状态则跳过, 不处理
-        if self.now_stage == NOW_STAGE_OUT:
-            return
-        # 如果生命值减少，则按百分比回复tp(每损失 1% 的最大生命值回复 2 点 TP)
-        if num < 0:
-            hurt_tp = math.floor(abs(num) / self.max_health * 100 / 2)
-            self.tpChange(hurt_tp)
-        self.now_health += num  # 当前生命值变动
-        # 当前生命值不会超过最大生命值
-        if self.now_health > self.max_health:
-            self.now_health = self.max_health
-        # 如果当前生命值 <0 则当前生命值归零并调用出局处理
-        elif self.now_health <= 0:
-            self.now_health = 0
-            self.room_obj.outDispose(self)
+	def healthChange(self, num):
+		"""生命值及其相关变动处理
+		生命值变动, 受伤回复 TP, 生命值归零出局
+		"""
+		# 当前玩家处于出局状态则跳过, 不处理
+		if self.now_stage == NOW_STAGE_OUT:
+			return
+		# 如果生命值减少，则按百分比回复tp(每损失 2% 的最大生命值回复 1 点 TP)
+		if num < 0:
+			hurt_tp = math.floor(abs(num) / self.max_health * 100 / 2)
+			self.tpChange(hurt_tp)
+		self.now_health += num  # 当前生命值变动
+		# 当前生命值不会超过最大生命值
+		if self.now_health > self.max_health:
+			self.now_health = self.max_health
+		# 如果当前生命值 <0 则当前生命值归零并调用出局处理
+		elif self.now_health <= 0:
+			self.now_health = 0
+			self.room_obj.outDispose(self)
 
-    def distanceChange(self, num):
-        """攻击距离变动
-        """
-        self.distance += num    # 攻击距离变动
-        # 攻击距离不会大于最大攻击距离
-        if self.distance > MAX_DIST:
-            self.distance = MAX_DIST
-        # 攻击距离不会小于 0
-        elif self.distance < 0:
-            self.distance = 0
+	def distanceChange(self, num):
+		"""攻击距离变动
+		"""
+		self.distance += num    # 攻击距离变动
+		# 攻击距离不会大于最大攻击距离
+		if self.distance > MAX_DIST:
+			self.distance = MAX_DIST
+		# 攻击距离不会小于 0
+		elif self.distance < 0:
+			self.distance = 0
 
-    def attackChange(self, num):
-        """攻击力变动
-        """
-        # 当前玩家处于出局状态则跳过, 不处理
-        if self.now_stage == NOW_STAGE_OUT:
-            return
-        self.attack += num
-        # 攻击力不会 < 0
-        if self.attack < 0:
-            self.attack = 0
+	def attackChange(self, num):
+		"""攻击力变动
+		"""
+		# 当前玩家处于出局状态则跳过, 不处理
+		if self.now_stage == NOW_STAGE_OUT:
+			return
+		self.attack += num
+		# 攻击力不会 < 0
+		if self.attack < 0:
+			self.attack = 0
 
-    def defensiveChange(self, num):
-        """防御力变动
-        要注意的是这里的防御力是可以无限叠加的, 但实际上这里只是个数值而已
-        防御力的生效是写在受伤函数 hurt_defensive_calculate(hurt, defensive) 里的
-        在受伤函数中防御力超过 1000 都按照 1000 点进行计算
-        """
-        # 当前玩家处于出局状态则跳过, 不处理
-        if self.now_stage == NOW_STAGE_OUT:
-            return
-        self.defensive += num
-        # 防御力不会低于 0
-        if self.defensive < 0:
-            self.defensive = 0
+	def defensiveChange(self, num):
+		"""防御力变动
+		要注意的是这里的防御力是可以无限叠加的, 但实际上这里只是个数值而已
+		防御力的生效是写在受伤函数 hurt_defensive_calculate(hurt, defensive) 里的
+		在受伤函数中防御力超过 1000 都按照 1000 点进行计算
+		"""
+		# 当前玩家处于出局状态则跳过, 不处理
+		if self.now_stage == NOW_STAGE_OUT:
+			return
+		self.defensive += num
+		# 防御力不会低于 0
+		if self.defensive < 0:
+			self.defensive = 0
 
-    def tpChange(self, num, is_save=False):
-        """"TP 变动
-        """
-        # 当前玩家处于出局状态则跳过, 不处理
-        if self.now_stage == NOW_STAGE_OUT:
-            return
-        # 当前成员还活着? 就变动 tp(上句话中好像已经略过了出局的玩家, 这句话我暂且蒙古)
-        if is_save:
-            self.save_tp += num
-            return
-        self.tp += num
-        # 下面这句暂时蒙古, save_tp 是指保存的 tp 值, 具体有什么用还要继续看下去
-        self.tp += self.save_tp
-        self.save_tp = 0
-        # TP 值不会超过上限
-        if self.tp > MAX_TP:
-            self.tp = MAX_TP
-        # TP 值不会小于 0
-        elif self.tp < 0:
-            self.tp = 0
+	def tpChange(self, num):
+		""""TP 变动
+		"""
+		# 当前玩家处于出局状态则跳过, 不处理
+		if self.now_stage == NOW_STAGE_OUT:
+			return
+		self.tp += num
+		# TP 值不会超过上限
+		if self.tp > MAX_TP:
+			self.tp = MAX_TP
+		# TP 值不会小于 0
+		elif self.tp < 0:
+			self.tp = 0
 
-    def locationChange(self, num, runway):
-        """位置变动
+	def locationChange(self, num, runway):
+		"""位置变动
 
-        """
-        # 当前玩家处于出局状态则跳过, 不处理
-        if self.now_stage == NOW_STAGE_OUT:
-            return
-        # 将玩家从当前位置列表中清除
-        runway[self.now_location]["players"].remove(self.user_id)
-        self.now_location += num    # 当前位置变动
-        # 当前位置基于跑到的最大长度循环变动
-        if self.now_location >= len(runway):
-            self.now_location -= len(runway)
-        elif self.now_location < 0:
-            self.now_location = len(runway) + self.now_location
-        # 在跑到相应位置更新玩家的新位置
-        runway[self.now_location]["players"].append(self.user_id)
+		"""
+		# 当前玩家处于出局状态则跳过, 不处理
+		if self.now_stage == NOW_STAGE_OUT:
+			return
+		# 将玩家从当前位置列表中清除
+		runway[self.now_location]["players"].remove(self.user_id)
+		self.now_location += num    # 当前位置变动
+		# 当前位置基于跑到的最大长度循环变动
+		if self.now_location >= len(runway):
+			self.now_location -= len(runway)
+		elif self.now_location < 0:
+			self.now_location = len(runway) + self.now_location
+		# 在跑到相应位置更新玩家的新位置
+		runway[self.now_location]["players"].append(self.user_id)
 
-    def stageChange(self, stage):
-        """更新玩家当前所处的阶段(等待, 丢色子, 释放技能, 出局)
-        """
-        self.now_stage = stage
+	def stageChange(self, stage):
+		"""更新玩家当前所处的阶段(等待, 丢色子, 释放技能, 出局)
+		"""
+		self.now_stage = stage
 
-    def checkStatu(self, scrimmage):
-        """检查当前状态
-        """
-        msg = [f"玩家：{uid2card(self.user_id, scrimmage.user_card_dict)}",
-               f"角色：{self.name}",
-               f"生命值：{self.now_health}/{self.max_health}",
-               f"TP：{self.tp}",
-               f"攻击距离：{self.distance}",
-               f"攻击力：{self.attack}",
-               f"防御力：{self.defensive}",
-               f'位置：{self.now_location}']
-        return msg
+	def checkStatu(self, scrimmage):
+		"""检查当前状态
+		"""
+		msg = [f"玩家：{uid2card(self.user_id, scrimmage.user_card_dict)}",
+			   f"角色：{self.name}",
+			   f"生命值：{self.now_health}/{self.max_health}",
+			   f"TP：{self.tp}",
+			   f"攻击距离：{self.distance}",
+			   f"攻击力：{self.attack}",
+			   f"防御力：{self.defensive}",
+			   f'位置：{self.now_location}']
+		return msg
 
 
 # 公主连结大乱斗
@@ -554,6 +546,9 @@ class PCRScrimmage:
 			if skill_tp_cost > use_player_obj.tp:		#检查tp是否足够
 				await bot.send(ev, 'tp不足，无法使用这个技能')
 				return RET_ERROR
+
+			#先扣除tp	
+			use_player_obj.tpChange(-skill_tp_cost)
 			
 			use_player_name = uid2card(use_player_obj.user_id, self.user_card_dict)
 			use_skill_nale = use_player_obj.active_skills[real_skill_id]["name"]
@@ -563,13 +558,14 @@ class PCRScrimmage:
 			ret, msg = self.skillTrigger(use_player_obj, goal_player_id, real_skill_id, False, back_msg)
 			if ret == RET_ERROR:
 				await bot.send(ev, msg)
+				#技能释放失败，返还tp
+				use_player_obj.tpChange(skill_tp_cost)
 				return ret
 			await bot.send(ev, '\n'.join(back_msg))
-			use_player_obj.tpChange(-skill_tp_cost)
 			
 		self.turnChange()	#回合切换
 		self.refreshNowImageStatu()	#刷新当前显示状态
-		return RET_SCUESS
+		return RET_SUCCESS
 	
 	#技能释放对象选择
 	def skillTrigger(self, use_skill_player:Role, goal_player_id, skill_id, is_passive, back_msg):
@@ -589,6 +585,8 @@ class PCRScrimmage:
 					return RET_ERROR, '目标不在房间里'
 				if goal_player_obj.now_stage == NOW_STAGE_OUT:
 					return RET_ERROR, '目标已出局'
+				if goal_player_obj == use_skill_player:
+					return RET_ERROR, '不能选择自己'
 
 				#检查被动技能里是否带有无视距离的技能效果
 				disregard_dist = False
@@ -642,7 +640,7 @@ class PCRScrimmage:
 		else:
 			return RET_ERROR, '技能配置出错'
 
-		return RET_SCUESS, msg
+		return RET_SUCCESS, msg
 
 	#技能效果生效
 	def skillEffect(self, use_skill_player:Role, goal_player:Role, skill_effect, back_msg:List):
@@ -745,14 +743,14 @@ class PCRScrimmage:
 		
 		#通用击倒tp
 		if goal_player.now_stage == NOW_STAGE_OUT:
-			use_skill_player.tpChange(HIT_DOWN_TP, True)	
+			use_skill_player.tpChange(HIT_DOWN_TP)	
 			back_msg.append(f'[CQ:at,qq={goal_player.user_id}]出局')
 
 		#效果击倒tp
 		if EFFECT_OUT_TP in skill_effect:
 			if goal_player.now_stage == NOW_STAGE_OUT:
 				num = skill_effect[EFFECT_OUT_TP]
-				use_skill_player.tpChange(num, True)
+				use_skill_player.tpChange(num)
 				if num < 0:
 					back_msg.append(f'{goal_player_name}被击倒，{use_player_name}降低了{abs(num)}点TP')
 				else:
@@ -767,7 +765,7 @@ class PCRScrimmage:
 
 		if len(back_msg) == 0:
 			back_msg.append('什么都没发生')
-		return RET_SCUESS, ''
+		return RET_SUCCESS, ''
 
 
 	#阶段提醒，丢色子/放技能阶段
@@ -896,35 +894,35 @@ class PCRScrimmage:
 				self.drawBox(100, 10,  self.grid_size * 2 + i * 200, self.grid_size * 4   + j * 190,      COLOR_BLACK,  STATU_LINE_WDITH)#TP框
 		#填充跑道事件文字
 		self.fillCaseText()
-        # 追逐方向绘制
-        width = (self.vertical_range_x + 2) * self.grid_size
-        height = (self.across_range_y + 2) * self.grid_size
-        offset = 20 # 直线相对图像边框偏移量
-        # 绘制折线段
-        self.draw.line([
-            (width-offset-self.grid_size, offset),
-            (width-offset, offset),
-            (width-offset, offset+self.grid_size)
-        ], fill=COLOR_BLACK, width=RUNWAY_LINE_WDITH)
-        # 绘制箭头
-        offset_arrow_x = 5
-        offset_arrow_y = 10
-        self.draw.line([
-            (width-offset-offset_arrow_x, offset+self.grid_size-offset_arrow_y),
-            (width - offset, offset + self.grid_size),
-            (width-offset+offset_arrow_x, offset+self.grid_size-offset_arrow_y)
-        ], fill=COLOR_BLACK, width=RUNWAY_LINE_WDITH)
+		# 追逐方向绘制
+		width = (self.vertical_range_x + 2) * self.grid_size
+		height = (self.across_range_y + 2) * self.grid_size
+		offset = 20 # 直线相对图像边框偏移量
+		# 绘制折线段
+		self.draw.line([
+			(width-offset-self.grid_size, offset),
+			(width-offset, offset),
+			(width-offset, offset+self.grid_size)
+		], fill=COLOR_BLACK, width=RUNWAY_LINE_WDITH)
+		# 绘制箭头
+		offset_arrow_x = 5
+		offset_arrow_y = 10
+		self.draw.line([
+			(width-offset-offset_arrow_x, offset+self.grid_size-offset_arrow_y),
+			(width - offset, offset + self.grid_size),
+			(width-offset+offset_arrow_x, offset+self.grid_size-offset_arrow_y)
+		], fill=COLOR_BLACK, width=RUNWAY_LINE_WDITH)
 
 	#画盒子（画框）
 	def drawBox(self, length, width, offset_x, offset_y, color = COLOR_BLACK, line_width = RUNWAY_LINE_WDITH, is_now = False):
 		draw = self.draw 
 		if is_now : draw = self.now_draw
 		draw.line(( (OFFSET_X + offset_x, 			OFFSET_Y + offset_y),
-						 (OFFSET_X + offset_x, 			OFFSET_Y + width + offset_y),
-						 (OFFSET_X + length + offset_x, OFFSET_Y + width + offset_y),
-						 (OFFSET_X + length + offset_x, OFFSET_Y + offset_y),
-						 (OFFSET_X + offset_x, 			OFFSET_Y + offset_y) ),
-						 fill = color, width = line_width )
+					(OFFSET_X + offset_x, 			OFFSET_Y + width + offset_y),
+					(OFFSET_X + length + offset_x,	OFFSET_Y + width + offset_y),
+					(OFFSET_X + length + offset_x,	OFFSET_Y + offset_y),
+					(OFFSET_X + offset_x, 			OFFSET_Y + offset_y) ),
+					fill = color, width = line_width )
 	
 	#填充跑道事件文字
 	def fillCaseText(self):
@@ -987,18 +985,18 @@ class PCRScrimmage:
 
 #管理器
 class manager:
-    def __init__(self):
-        # playing = {} 并且定义为一个 PCRScrimmage 对象组成的列表?
-        self.playing: List[PCRScrimmage] = {}
+	def __init__(self):
+		# playing = {} 并且定义为一个 PCRScrimmage 对象组成的列表?
+		self.playing: List[PCRScrimmage] = {}
 
-    def is_playing(self, gid):
-        return gid in self.playing
+	def is_playing(self, gid):
+		return gid in self.playing
 
-    def start(self, gid, uid):
-        return PCRScrimmage(gid, self, uid)
+	def start(self, gid, uid):
+		return PCRScrimmage(gid, self, uid)
 
-    def get_game(self, gid):
-        return self.playing[gid] if gid in self.playing else None
+	def get_game(self, gid):
+		return self.playing[gid] if gid in self.playing else None
 
 
 mgr = manager() # 初始化管理器
@@ -1008,317 +1006,317 @@ PROCESS_WAIT_TIME = 1
 
 @sv.on_fullmatch('创建大乱斗')
 async def game_create(bot, ev: CQEvent):
-    if mgr.is_playing(ev.group_id):
-        await bot.finish(ev, '游戏仍在进行中…')
+	if mgr.is_playing(ev.group_id):
+		await bot.finish(ev, '游戏仍在进行中…')
 
-    image_path = R.img(f'{IMAGE_PATH}/{ev.group_id}.jpg').path
-    if os.path.exists(image_path):
-        os.remove(image_path)
-    gid, uid = ev.group_id, ev.user_id
+	image_path = R.img(f'{IMAGE_PATH}/{ev.group_id}.jpg').path
+	if os.path.exists(image_path):
+		os.remove(image_path)
+	gid, uid = ev.group_id, ev.user_id
 
-    with mgr.start(gid, uid) as scrimmage:
-        await bot.send(ev, f'大乱斗房间已创建，等待加入中。。。\n当前人数({scrimmage.getPlayerNum()}/{MAX_PLAYER})\n（发送“加入大乱斗”加入）')
-        scrimmage.user_card_dict = await get_user_card_dict(bot, gid)
+	with mgr.start(gid, uid) as scrimmage:
+		await bot.send(ev, f'大乱斗房间已创建，等待加入中。。。\n当前人数({scrimmage.getPlayerNum()}/{MAX_PLAYER})\n（发送“加入大乱斗”加入）')
+		scrimmage.user_card_dict = await get_user_card_dict(bot, gid)
 
-        while True:  # 从等待到正式开始的循环等待
-            await asyncio.sleep(WAIT_TIME)
-            if scrimmage.now_statu == NOW_STATU_OPEN:
-                scrimmage.gameOpen()
-                img = scrimmage.getNowImage()
-                img.save(image_path)
-                await bot.send(ev, R.img(image_path).cqcode)
-                await asyncio.sleep(PROCESS_WAIT_TIME)
-                await scrimmage.stageRemind(bot, ev)
-                break
-            elif scrimmage.now_statu == NOW_STATU_END:
-                break
+		while True:  # 从等待到正式开始的循环等待
+			await asyncio.sleep(WAIT_TIME)
+			if scrimmage.now_statu == NOW_STATU_OPEN:
+				scrimmage.gameOpen()
+				img = scrimmage.getNowImage()
+				img.save(image_path)
+				await bot.send(ev, R.img(image_path).cqcode)
+				await asyncio.sleep(PROCESS_WAIT_TIME)
+				await scrimmage.stageRemind(bot, ev)
+				break
+			elif scrimmage.now_statu == NOW_STATU_END:
+				break
 
-        if scrimmage.now_statu == NOW_STATU_OPEN:
-            while True:  # 开始后的循环等待
-                await asyncio.sleep(WAIT_TIME)
-                if (scrimmage.now_statu == NOW_STATU_END or
-                        scrimmage.now_statu == NOW_STATU_WIN):
-                    break
-        if scrimmage.now_statu == NOW_STATU_WIN:
-            msg = ['大乱斗已结束，排名如下：']
-            for i in range(len(scrimmage.rank)):
-                user_card = uid2card(scrimmage.rank[i + 1], scrimmage.user_card_dict)
-                msg.append(f'第{i + 1}名：{user_card}')
-            await bot.send(ev, '\n'.join(msg))
-        else:
-            await bot.send(ev, f'游戏结束')
+		if scrimmage.now_statu == NOW_STATU_OPEN:
+			while True:  # 开始后的循环等待
+				await asyncio.sleep(WAIT_TIME)
+				if (scrimmage.now_statu == NOW_STATU_END or
+						scrimmage.now_statu == NOW_STATU_WIN):
+					break
+		if scrimmage.now_statu == NOW_STATU_WIN:
+			msg = ['大乱斗已结束，排名如下：']
+			for i in range(len(scrimmage.rank)):
+				user_card = uid2card(scrimmage.rank[i + 1], scrimmage.user_card_dict)
+				msg.append(f'第{i + 1}名：{user_card}')
+			await bot.send(ev, '\n'.join(msg))
+		else:
+			await bot.send(ev, f'游戏结束')
 
 
 @sv.on_fullmatch('加入大乱斗')
 async def game_join(bot, ev: CQEvent):
-    gid, uid = ev.group_id, ev.user_id
-    scrimmage = mgr.get_game(gid)
-    if not scrimmage or scrimmage.now_statu != NOW_STATU_WAIT:
-        return
-    if uid in scrimmage.player_list:
-        await bot.finish(ev, '您已经在准备房间里了', at_sender=True)
-    if scrimmage.getPlayerNum() >= MAX_PLAYER:
-        await bot.finish(ev, '人数已满，无法继续加入', at_sender=True)
+	gid, uid = ev.group_id, ev.user_id
+	scrimmage = mgr.get_game(gid)
+	if not scrimmage or scrimmage.now_statu != NOW_STATU_WAIT:
+		return
+	if uid in scrimmage.player_list:
+		await bot.finish(ev, '您已经在准备房间里了', at_sender=True)
+	if scrimmage.getPlayerNum() >= MAX_PLAYER:
+		await bot.finish(ev, '人数已满，无法继续加入', at_sender=True)
 
-    scrimmage.ready(uid)
+	scrimmage.ready(uid)
 
-    msg = []
-    for user_id in scrimmage.player_list:
-        user_card = uid2card(user_id, scrimmage.user_card_dict)
-        msg.append(user_card)
-    await bot.send(ev, f'已加入\n当前人数({scrimmage.getPlayerNum()}/{MAX_PLAYER})\n{" ".join(msg)}')
-    if scrimmage.getPlayerNum() == MAX_PLAYER:
-        await bot.send(ev, '人数已满，可开始游戏。\n（发送“开始大乱斗”开始）')
+	msg = []
+	for user_id in scrimmage.player_list:
+		user_card = uid2card(user_id, scrimmage.user_card_dict)
+		msg.append(user_card)
+	await bot.send(ev, f'已加入\n当前人数({scrimmage.getPlayerNum()}/{MAX_PLAYER})\n{" ".join(msg)}')
+	if scrimmage.getPlayerNum() == MAX_PLAYER:
+		await bot.send(ev, '人数已满，可开始游戏。\n（发送“开始大乱斗”开始）')
 
 
 @sv.on_fullmatch('开始大乱斗')
 async def game_start(bot, ev: CQEvent):
-    gid, uid = ev.group_id, ev.user_id
-    scrimmage = mgr.get_game(gid)
-    if not scrimmage or scrimmage.now_statu != NOW_STATU_WAIT:
-        await bot.send(ev, "当前群聊没有已创建的大乱斗")
-        return
-    if not uid == scrimmage.room_master:
-        await bot.finish(ev, '只有房主才能开始', at_sender=True)
-    if scrimmage.getPlayerNum() < 2:
-        await bot.finish(ev, '要两个人以上才能开始', at_sender=True)
+	gid, uid = ev.group_id, ev.user_id
+	scrimmage = mgr.get_game(gid)
+	if not scrimmage or scrimmage.now_statu != NOW_STATU_WAIT:
+		await bot.send(ev, "当前群聊没有已创建的大乱斗")
+		return
+	if not uid == scrimmage.room_master:
+		await bot.finish(ev, '只有房主才能开始', at_sender=True)
+	if scrimmage.getPlayerNum() < 2:
+		await bot.finish(ev, '要两个人以上才能开始', at_sender=True)
 
-    scrimmage.now_statu = NOW_STATU_SELECT_ROLE
-    role_list = '游戏开始，请选择角色，当前可选角色：\n（'
-    for role in ROLE.values():
-        role_list += f'{role["name"]} '
-    role_list += ')\n输入“角色详情 角色名” 可查看角色属性和技能\n（所有人都选择角色后自动开始）'
-    await bot.send(ev, role_list)
+	scrimmage.now_statu = NOW_STATU_SELECT_ROLE
+	role_list = '游戏开始，请选择角色，当前可选角色：\n（'
+	for role in ROLE.values():
+		role_list += f'{role["name"]} '
+	role_list += ')\n输入“角色详情 角色名” 可查看角色属性和技能\n（所有人都选择角色后自动开始）'
+	await bot.send(ev, role_list)
 
 
 @sv.on_message()  # 选择角色
 async def select_role(bot, ev: CQEvent):
-    gid, uid = ev.group_id, ev.user_id
-    scrimmage = mgr.get_game(gid)
-    if not scrimmage or scrimmage.now_statu != NOW_STATU_SELECT_ROLE:
-        return
-    # 已加入房间的玩家才能选择角色
-    if uid not in scrimmage.player_list:
-        return
+	gid, uid = ev.group_id, ev.user_id
+	scrimmage = mgr.get_game(gid)
+	if not scrimmage or scrimmage.now_statu != NOW_STATU_SELECT_ROLE:
+		return
+	# 已加入房间的玩家才能选择角色
+	if uid not in scrimmage.player_list:
+		return
 
-    image_path = R.img(f'{IMAGE_PATH}/{ev.group_id}.png').path
+	image_path = R.img(f'{IMAGE_PATH}/{ev.group_id}.png').path
 
-    character = chara.fromname(ev.message.extract_plain_text())
-    if character.id != chara.UNKNOWN and character.id in ROLE:
-        player = scrimmage.getPlayerObj(uid)
-        player.initData(character.id, character, scrimmage)
+	character = chara.fromname(ev.message.extract_plain_text())
+	if character.id != chara.UNKNOWN and character.id in ROLE:
+		player = scrimmage.getPlayerObj(uid)
+		player.initData(character.id, character, scrimmage)
 
-        img = player.role_icon
-        img.save(image_path)
-        await bot.send(ev, f"您选择的角色是：{player.name}\n{R.img(image_path).cqcode}", at_sender=True)
+		img = player.role_icon
+		img.save(image_path)
+		await bot.send(ev, f"您选择的角色是：{player.name}\n{R.img(image_path).cqcode}", at_sender=True)
 
-        if scrimmage.checkAllPlayerSelectRole():
-            await asyncio.sleep(PROCESS_WAIT_TIME)
-            await bot.send(ev, "所有人都选择了角色，大乱斗即将开始！\n碾碎他们")
-            await asyncio.sleep(PROCESS_WAIT_TIME)
-            scrimmage.now_statu = NOW_STATU_OPEN
+		if scrimmage.checkAllPlayerSelectRole():
+			await asyncio.sleep(PROCESS_WAIT_TIME)
+			await bot.send(ev, "所有人都选择了角色，大乱斗即将开始！\n碾碎他们")
+			await asyncio.sleep(PROCESS_WAIT_TIME)
+			scrimmage.now_statu = NOW_STATU_OPEN
 
 
 @sv.on_fullmatch(('扔色子', '扔骰子', '丢色子', '丢骰子', '丢', '扔'))
 async def throw_dice(bot, ev: CQEvent):
-    """丢色子处理
-    全字匹配命令('扔色子', '扔骰子', '丢色子', '丢骰子', '丢', '扔')
-    """
-    # 获取触发指令的群 id, 用户 id
-    gid, uid = ev.group_id, ev.user_id
-    # 获取当前群的大乱斗对象
-    scrimmage = mgr.get_game(gid)
-    # 如果当前群未启用大乱斗或者大乱斗未开始则返回
-    if not scrimmage or scrimmage.now_statu != NOW_STATU_OPEN:
-        return
-    # 已加入房间的玩家才能丢色子
-    if uid not in scrimmage.player_list:
-        return
-    # 不是当前回合的玩家无法丢色子
-    if scrimmage.getNowTurnPlayerObj().user_id != uid:
-        await bot.send(ev, '当前不是您的回合, 无法丢色子')
-        return
-    # 当前回合不是丢色子状态无法丢色子
-    if scrimmage.getPlayerObj(uid).now_stage != NOW_STAGE_DICE:
-        await bot.send(ev, '您当前未处于掷骰阶段, 无法丢色子')
-        return
-    # 丢一个 5 面骰作为步数
-    step = random.choice(range(1, 6))
-    await bot.send(ev, '色子结果为：' + str(step))
-    """
-    触发大乱斗丢色子事件, 更改当前位置
-    all survivors 10 tp up↑
-    每 num_or_survivor 回合所有存活玩家 2 attack_distance UP↑, 10 ATK UP↑
-    """
-    await scrimmage.throwDice(uid, step, bot, ev)
-    # 刷新当前状态图片
-    scrimmage.refreshNowImageStatu()
+	"""丢色子处理
+	全字匹配命令('扔色子', '扔骰子', '丢色子', '丢骰子', '丢', '扔')
+	"""
+	# 获取触发指令的群 id, 用户 id
+	gid, uid = ev.group_id, ev.user_id
+	# 获取当前群的大乱斗对象
+	scrimmage = mgr.get_game(gid)
+	# 如果当前群未启用大乱斗或者大乱斗未开始则返回
+	if not scrimmage or scrimmage.now_statu != NOW_STATU_OPEN:
+		return
+	# 已加入房间的玩家才能丢色子
+	if uid not in scrimmage.player_list:
+		return
+	# 不是当前回合的玩家无法丢色子
+	if scrimmage.getNowTurnPlayerObj().user_id != uid:
+		await bot.send(ev, '当前不是您的回合, 无法丢色子')
+		return
+	# 当前回合不是丢色子状态无法丢色子
+	if scrimmage.getPlayerObj(uid).now_stage != NOW_STAGE_DICE:
+		await bot.send(ev, '您当前未处于掷骰阶段, 无法丢色子')
+		return
+	# 丢一个 5 面骰作为步数
+	step = random.choice(range(1, 6))
+	await bot.send(ev, '色子结果为：' + str(step))
+	"""
+	触发大乱斗丢色子事件, 更改当前位置
+	all survivors 10 tp up↑
+	每 num_or_survivor 回合所有存活玩家 2 attack_distance UP↑, 10 ATK UP↑
+	"""
+	await scrimmage.throwDice(uid, step, bot, ev)
+	# 刷新当前状态图片
+	scrimmage.refreshNowImageStatu()
 
-    image_path = R.img(f'{IMAGE_PATH}/{ev.group_id}.jpg').path
-    img = scrimmage.getNowImage()
-    img.save(image_path)
-    await bot.send(ev, R.img(image_path).cqcode)
-    await asyncio.sleep(PROCESS_WAIT_TIME)
-    await scrimmage.stageRemind(bot, ev)
+	image_path = R.img(f'{IMAGE_PATH}/{ev.group_id}.jpg').path
+	img = scrimmage.getNowImage()
+	img.save(image_path)
+	await bot.send(ev, R.img(image_path).cqcode)
+	await asyncio.sleep(PROCESS_WAIT_TIME)
+	await scrimmage.stageRemind(bot, ev)
 
 
 @sv.on_message()  # 使用技能
 async def use_skill(bot, ev: CQEvent):
-    gid, uid = ev.group_id, ev.user_id
+	gid, uid = ev.group_id, ev.user_id
 
-    msg_text = ev.raw_message
-    match = re.match(r'^(\d+)( |) *(?:\[CQ:at,qq=(\d+)])?', msg_text)
-    if not match and msg_text != '跳过':
-        return
-    scrimmage = mgr.get_game(gid)
-    if not scrimmage or scrimmage.now_statu != NOW_STATU_OPEN:
-        return
-    # 已加入房间的玩家才能释放技能
-    if uid not in scrimmage.player_list:
-        return
-    # 不是当前回合的玩家无法释放技能
-    if scrimmage.getNowTurnPlayerObj().user_id != uid:
-        return
-    # 当前回合不是放技能状态无法放技能
-    if scrimmage.getPlayerObj(uid).now_stage != NOW_STAGE_SKILL:
-        return
+	msg_text = ev.raw_message
+	match = re.match(r'^(\d+)( |) *(?:\[CQ:at,qq=(\d+)])?', msg_text)
+	if not match and msg_text != '跳过':
+		return
+	scrimmage = mgr.get_game(gid)
+	if not scrimmage or scrimmage.now_statu != NOW_STATU_OPEN:
+		return
+	# 已加入房间的玩家才能释放技能
+	if uid not in scrimmage.player_list:
+		return
+	# 不是当前回合的玩家无法释放技能
+	if scrimmage.getNowTurnPlayerObj().user_id != uid:
+		return
+	# 当前回合不是放技能状态无法放技能
+	if scrimmage.getPlayerObj(uid).now_stage != NOW_STAGE_SKILL:
+		return
 
-    skill_id = ''
-    goal_player_id = ''
-    if match:
-        skill_id = match.group(1)
-        goal_player_id = match.group(3) or '0'
-    else:
-        skill_id = '0'
-        goal_player_id = '0'
+	skill_id = ''
+	goal_player_id = ''
+	if match:
+		skill_id = match.group(1)
+		goal_player_id = match.group(3) or '0'
+	else:
+		skill_id = '0'
+		goal_player_id = '0'
 
-    ret = await scrimmage.useSkill(int(skill_id), uid, int(goal_player_id), bot, ev)
-    if ret == RET_ERROR:
-        return
+	ret = await scrimmage.useSkill(int(skill_id), uid, int(goal_player_id), bot, ev)
+	if ret == RET_ERROR:
+		return
 
-    image_path = R.img(f'{IMAGE_PATH}/{ev.group_id}.jpg').path
-    img = scrimmage.getNowImage()
-    img.save(image_path)
-    await bot.send(ev, R.img(image_path).cqcode)
-    await asyncio.sleep(PROCESS_WAIT_TIME)
-    await scrimmage.stageRemind(bot, ev)
+	image_path = R.img(f'{IMAGE_PATH}/{ev.group_id}.jpg').path
+	img = scrimmage.getNowImage()
+	img.save(image_path)
+	await bot.send(ev, R.img(image_path).cqcode)
+	await asyncio.sleep(PROCESS_WAIT_TIME)
+	await scrimmage.stageRemind(bot, ev)
 
 
 @sv.on_fullmatch(('认输', '投降', '不玩了'))
 async def throw_dice(bot, ev: CQEvent):
-    gid, uid = ev.group_id, ev.user_id
+	gid, uid = ev.group_id, ev.user_id
 
-    scrimmage = mgr.get_game(gid)
-    if not scrimmage or scrimmage.now_statu != NOW_STATU_OPEN:
-        return
-    # 已加入房间的玩家才能投降
-    if uid not in scrimmage.player_list:
-        return
-    # 不是当前回合的玩家无法投降
-    if scrimmage.getNowTurnPlayerObj().user_id != uid:
-        return
+	scrimmage = mgr.get_game(gid)
+	if not scrimmage or scrimmage.now_statu != NOW_STATU_OPEN:
+		return
+	# 已加入房间的玩家才能投降
+	if uid not in scrimmage.player_list:
+		return
+	# 不是当前回合的玩家无法投降
+	if scrimmage.getNowTurnPlayerObj().user_id != uid:
+		return
 
-    player = scrimmage.getPlayerObj(uid)
-    scrimmage.outDispose(player)
-    await bot.send(ev, f'{uid2card(uid, scrimmage.user_card_dict)}已投降')
-    if scrimmage.now_statu == NOW_STATU_OPEN:
-        scrimmage.turnChange()
-        scrimmage.refreshNowImageStatu()
-        image_path = R.img(f'{IMAGE_PATH}/{ev.group_id}.jpg').path
-        img = scrimmage.getNowImage()
-        img.save(image_path)
-        await bot.send(ev, R.img(image_path).cqcode)
-        await asyncio.sleep(PROCESS_WAIT_TIME)
-        await scrimmage.stageRemind(bot, ev)
+	player = scrimmage.getPlayerObj(uid)
+	scrimmage.outDispose(player)
+	await bot.send(ev, f'{uid2card(uid, scrimmage.user_card_dict)}已投降')
+	if scrimmage.now_statu == NOW_STATU_OPEN:
+		scrimmage.turnChange()
+		scrimmage.refreshNowImageStatu()
+		image_path = R.img(f'{IMAGE_PATH}/{ev.group_id}.jpg').path
+		img = scrimmage.getNowImage()
+		img.save(image_path)
+		await bot.send(ev, R.img(image_path).cqcode)
+		await asyncio.sleep(PROCESS_WAIT_TIME)
+		await scrimmage.stageRemind(bot, ev)
 
 
 @sv.on_fullmatch('查看属性')
 async def check_property(bot, ev: CQEvent):
-    gid, uid = ev.group_id, ev.user_id
+	gid, uid = ev.group_id, ev.user_id
 
-    scrimmage = mgr.get_game(gid)
-    if not scrimmage or scrimmage.now_statu != NOW_STATU_OPEN:
-        return
-    player = scrimmage.getPlayerObj(uid)
-    msg = player.checkStatu(scrimmage)
-    await bot.send(ev, "\n".join(msg))
+	scrimmage = mgr.get_game(gid)
+	if not scrimmage or scrimmage.now_statu != NOW_STATU_OPEN:
+		return
+	player = scrimmage.getPlayerObj(uid)
+	msg = player.checkStatu(scrimmage)
+	await bot.send(ev, "\n".join(msg))
 
 
 @sv.on_rex(r'^角色详情( |)([\s\S]*)')
 async def check_role(bot, ev: CQEvent):
-    match = ev['match']
-    if not match:
-        return
+	match = ev['match']
+	if not match:
+		return
 
-    role_name = match.group(2)
-    character = chara.fromname(role_name)
-    if character.id != chara.UNKNOWN and character.id in ROLE:
-        role_info = ROLE[character.id]
-        msg = [f"名字：{role_info['name']}",
-               f"生命值：{role_info['health']}",
-               f"TP：{role_info['tp']}",
-               f"攻击距离：{role_info['distance']}",
-               f"攻击力：{role_info['attack']}",
-               f"防御力：{role_info['defensive']}",
-               f"技能："]
-        for skill in role_info['active_skills']:
-            msg.append(f"{skill['name']}({skill['tp_cost']}tp)：{skill['text']}")
-        return await bot.send(ev, "\n".join(msg))
+	role_name = match.group(2)
+	character = chara.fromname(role_name)
+	if character.id != chara.UNKNOWN and character.id in ROLE:
+		role_info = ROLE[character.id]
+		msg = [f"名字：{role_info['name']}",
+			   f"生命值：{role_info['health']}",
+			   f"TP：{role_info['tp']}",
+			   f"攻击距离：{role_info['distance']}",
+			   f"攻击力：{role_info['attack']}",
+			   f"防御力：{role_info['defensive']}",
+			   f"技能："]
+		for skill in role_info['active_skills']:
+			msg.append(f"{skill['name']}({skill['tp_cost']}tp)：{skill['text']}")
+		return await bot.send(ev, "\n".join(msg))
 
-    await bot.send(ev, '不存在的角色')
+	await bot.send(ev, '不存在的角色')
 
 
 @sv.on_fullmatch('结束大乱斗')
 async def game_end(bot, ev: CQEvent):
-    gid, uid = ev.group_id, ev.user_id
+	gid, uid = ev.group_id, ev.user_id
 
-    scrimmage = mgr.get_game(gid)
-    if not scrimmage or scrimmage.now_statu == NOW_STATU_END:
-        return
-    if not priv.check_priv(ev, priv.ADMIN) and not uid == scrimmage.room_master:
-        await bot.finish(ev, '只有群管理或房主才能强制结束', at_sender=True)
+	scrimmage = mgr.get_game(gid)
+	if not scrimmage or scrimmage.now_statu == NOW_STATU_END:
+		return
+	if not priv.check_priv(ev, priv.ADMIN) and not uid == scrimmage.room_master:
+		await bot.finish(ev, '只有群管理或房主才能强制结束', at_sender=True)
 
-    scrimmage.now_statu = NOW_STATU_END
-    await bot.send(ev, f"您已强制结束大乱斗，请等待结算")
+	scrimmage.now_statu = NOW_STATU_END
+	await bot.send(ev, f"您已强制结束大乱斗，请等待结算")
 
 
 @sv.on_fullmatch(('PCR大乱斗', 'pcr大乱斗', '大乱斗帮助', 'PCR大乱斗帮助', 'pcr大乱斗帮助'))
 async def game_help(bot, ev: CQEvent):
-    msg = '''《PCR大乱斗帮助》
-    基础命令：
-    1、大乱斗规则
-    可查看大乱斗相关规则
-    2、大乱斗角色
-    可查看所有可用角色
-    3、角色详情 （角色名）
-    如：角色详情 黑猫
-    可查看角色的基础属性和技能
-    4、结束大乱斗
-    可以强制结束正在进行的大乱斗游戏
-    （该命令只有管理员和房主可用）
-    一、创建阶段：
-    1、创建大乱斗
-    2、加入大乱斗
-    3、开始大乱斗
-    二、选择角色阶段：
-    1、（角色名）
-    如：凯露 / 黑猫
-    （名字和外号都行）
-    三、对战阶段：
-    1、丢色子
-    2、（技能编号） @xxx
-    如：1 @xxx
-    发送技能编号并@目标，如果这个技能不需要指定目标，直接发送技能编号即可
-    3、查看属性
-    可查看自己当前角色详细属性
-    4、投降 / 认输
-    '''
-    await bot.send(ev, msg)
+	msg = '''《PCR大乱斗帮助》
+	基础命令：
+	1、大乱斗规则
+	可查看大乱斗相关规则
+	2、大乱斗角色
+	可查看所有可用角色
+	3、角色详情 （角色名）
+	如：角色详情 黑猫
+	可查看角色的基础属性和技能
+	4、结束大乱斗
+	可以强制结束正在进行的大乱斗游戏
+	（该命令只有管理员和房主可用）
+	一、创建阶段：
+	1、创建大乱斗
+	2、加入大乱斗
+	3、开始大乱斗
+	二、选择角色阶段：
+	1、（角色名）
+	如：凯露 / 黑猫
+	（名字和外号都行）
+	三、对战阶段：
+	1、丢色子
+	2、（技能编号） @xxx
+	如：1 @xxx
+	发送技能编号并@目标，如果这个技能不需要指定目标，直接发送技能编号即可
+	3、查看属性
+	可查看自己当前角色详细属性
+	4、投降 / 认输
+	'''
+	await bot.send(ev, msg)
 
 
 @sv.on_fullmatch('大乱斗规则')
 async def game_help_all_role(bot, ev: CQEvent):
-    msg = '''《PCR大乱斗规则》
+	msg = '''《PCR大乱斗规则》
 1、和大富翁类似，一个正方形环形跑道，跑道上有多个事件，通过丢色子走到特定的位置触发事件
 2、可多个玩家同时玩，最多4个，最少2个。每个玩家可选择一个pcr里的角色，不同的角色有不同的属性、技能
 3、角色有tp值，每次投掷色子，所有玩家都会增加tp值，tp达到技能的要求可释放技能
@@ -1327,13 +1325,13 @@ async def game_help_all_role(bot, ev: CQEvent):
 6、可投降
 7、活到最后获胜（吃鸡？）
 '''
-    await bot.send(ev, msg)
+	await bot.send(ev, msg)
 
 
 @sv.on_fullmatch('大乱斗角色')
 async def game_help_rule(bot, ev: CQEvent):
-    msg = '当前可选角色有：\n'
-    for role in ROLE.values():
-        msg += f'{role["name"]} '
-    msg += f'\n共{len(ROLE)}位角色'
-    await bot.send(ev, msg)
+	msg = '当前可选角色有：\n'
+	for role in ROLE.values():
+		msg += f'{role["name"]} '
+	msg += f'\n共{len(ROLE)}位角色'
+	await bot.send(ev, msg)
