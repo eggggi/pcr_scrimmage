@@ -68,6 +68,7 @@ if not os.path.exists(IMAGE_PATH):
     logger.info('create folder succeed')
 
 
+# 获取成员及其卡片字典
 async def get_user_card_dict(bot, group_id) -> dict:
     """获取成员及其卡片字典
     """
@@ -78,6 +79,7 @@ async def get_user_card_dict(bot, group_id) -> dict:
     return d
 
 
+# 返回 uid
 def uid2card(uid, user_card_dict):
     """返回 uid
     存疑, 这句没太看懂;
@@ -86,10 +88,14 @@ def uid2card(uid, user_card_dict):
     return str(uid) if uid not in user_card_dict.keys() else user_card_dict[uid]
 
 
+# 防御力计算机制
 def hurt_defensive_calculate(hurt, defensive):
     """防御力计算机制
+
     100点防御力内，每1点防御力增加0.1%伤害减免；
+
     100点防御力后，每1点防御力增加0.05%伤害减免；
+
     最高有效防御力为1000（防御力可无限提升，但最高只能获得55%伤害减免）
 
     :return: 减伤后的伤害值
