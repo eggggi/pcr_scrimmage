@@ -77,280 +77,280 @@ TRIGGER_NEAR = "near"  # 离自己最近的目标
 
 # 角色字典
 ROLE = {
-    # 注意 :id要和 _pcr_data.py 里对应角色一样
-    1060: {
-        "name": "凯露",
+	#注意：id要和_pcr_data.py里对应角色一样
+	1060:{
+		"name":"凯露",
 
-        "health": 800,
-        "distance": 10,
-        "attack": 100,
-        "defensive": 60,
-        "tp": 0,
+		"health":800,
+		"distance":10,
+		"attack":100,
+		"defensive":60,
+		"tp":0,
 
-        "active_skills": [
-            {
-                "name": "闪电球",
-                "text": "对目标造成100(+0.5攻击力)伤害并减少50防御，自身增加20点攻击力",
-                "tp_cost": 20,
-                "trigger": TRIGGER_SELECT,
-                "passive": [0],
-                "effect": {
-                    EFFECT_HEALTH: (-100, 0.5, False),
-                    EFFECT_DEFENSIVE: -50,
-                }
-            },
-            {
-                "name": "格林爆裂",
-                "text": "对所有人造成100(+1.5攻击力)伤害",
-                "tp_cost": 50,
-                "trigger": TRIGGER_ALL_EXCEPT_ME,
-                "passive": [],
-                "effect": {
-                    EFFECT_HEALTH: (-100, 1.5, False),
-                }
-            }
-        ],
-        "passive_skills": [
-            {
-                "trigger": TRIGGER_ME,
-                "effect": {
-                    EFFECT_ATTACK: 20,
-                }
-            }
-        ]
-    },
-    1059: {
-        "name": "可可萝",
+		"active_skills" : [
+			{
+				"name":"闪电球",
+				"text":"对目标造成100(+0.5攻击力)伤害并减少50防御，自身增加20点攻击力",
+				"tp_cost":20,
+				"trigger": TRIGGER_SELECT,
+				"passive":[0],
+				"effect":{
+					EFFECT_HEALTH:(-100, 0.5, False),
+					EFFECT_DEFENSIVE:-50,
+				}
+			},
+			{
+				"name":"格林爆裂",
+				"text":"对所有人造成100(+1.5攻击力)伤害",
+				"tp_cost":50,
+				"trigger": TRIGGER_ALL_EXCEPT_ME,
+				"passive":[],
+				"effect":{
+					EFFECT_HEALTH:(-100, 1.5, False),
+				}
+			}
+		],
+		"passive_skills": [
+			{
+				"trigger": TRIGGER_ME,
+				"effect":{
+					EFFECT_ATTACK:20,
+				}
+			}
+		]
+	},
+	1059:{
+		"name":"可可萝",
 
-        "health": 1000,
-        "distance": 6,
-        "attack": 50,
-        "defensive": 70,
-        "tp": 0,
+		"health":1000,
+		"distance":6,
+		"attack":50,
+		"defensive":70,
+		"tp":0,
 
-        "active_skills": [
-            {
-                "name": "三连击",
-                "text": "向目标移动3格，并对目标造成100(+1.0攻击力)伤害",
-                "tp_cost": 20,
-                "trigger": TRIGGER_SELECT,
-                "passive": [0],
-                "effect": {
-                    EFFECT_HEALTH: (-100, 1, False)
-                }
-            },
-            {
-                "name": "光之守护",
-                "text": "自身回复250点生命值，并增加50点攻击力",
-                "tp_cost": 50,
-                "trigger": TRIGGER_ME,
-                "passive": [],
-                "effect": {
-                    EFFECT_HEALTH: (250, 0, False),
-                    EFFECT_ATTACK: 50
-                }
-            }
-        ],
-        "passive_skills": [
-            {
-                "trigger": TRIGGER_SELECT,
-                "effect": {
-                    EFFECT_MOVE_GOAL: (3, False),
-                }
-            }
-        ]
-    },
-    1058: {
-        "name": "佩可",
+		"active_skills" : [
+			{
+				"name":"三连击",
+				"text":"向目标移动3格，并对目标造成100(+1.0攻击力)伤害",
+				"tp_cost":20,
+				"trigger": TRIGGER_SELECT,
+				"passive":[0],
+				"effect":{
+					EFFECT_HEALTH:(-100, 1, False)
+				}
+			},
+			{
+				"name":"光之守护",
+				"text":"自身回复250点生命值，并增加50点攻击力",
+				"tp_cost":50,
+				"trigger": TRIGGER_ME,
+				"passive":[],
+				"effect":{
+					EFFECT_HEALTH:(250, 0, False),
+					EFFECT_ATTACK:50
+				}
+			}
+		],
+		"passive_skills": [
+			{
+				"trigger": TRIGGER_SELECT,
+				"effect":{
+					EFFECT_MOVE_GOAL:(3, False),
+				}
+			}
+		]
+	},
+	1058:{
+		"name":"佩可",
 
-        "health": 1500,
-        "distance": 5,
-        "attack": 60,
-        "defensive": 100,
-        "tp": 0,
+		"health":1500,
+		"distance":5,
+		"attack":60,
+		"defensive":100,
+		"tp":0,
 
-        "active_skills": [
-            {
-                "name": "普通攻击",
-                "text": "对目标造成0(+1.0攻击力)伤害",
-                "tp_cost": 0,
-                "trigger": TRIGGER_SELECT,
-                "passive": [],
+		"active_skills" : [
+			{
+				"name":"普通攻击",
+				"text":"对目标造成0(+1.0攻击力)伤害",
+				"tp_cost":0,
+				"trigger": TRIGGER_SELECT,
+				"passive":[],
 
-                "effect": {
-                    EFFECT_HEALTH: (0, 1, False)
-                }
-            },
-            {
-                "name": "超大饭团",
-                "text": "回复自身150生命值",
-                "tp_cost": 20,
-                "trigger": TRIGGER_ME,
-                "passive": [],
+				"effect":{
+					EFFECT_HEALTH:(0, 1, False)
+				}
+			},
+			{
+				"name":"超大饭团",
+				"text":"回复自身150生命值",
+				"tp_cost":20,
+				"trigger": TRIGGER_ME,
+				"passive":[],
 
-                "effect": {
-                    EFFECT_HEALTH: (100, 0, False),
-                }
-            },
-            {
-                "name": "公主突袭",
-                "text": "向目标移动5格，对目标造成150(+1.0攻击力)伤害，并增加自身100防御",
-                "tp_cost": 50,
-                "trigger": TRIGGER_SELECT,
-                "passive": [0, 1],  # 一个技能有多个效果且包括向目标移动，向目标移动效果必须最先触发
+				"effect":{
+					EFFECT_HEALTH:(100, 0, False),
+				}
+			},
+			{
+				"name":"公主突袭",
+				"text":"向目标移动5格，对目标造成150(+1.0攻击力)伤害，并增加自身100防御",
+				"tp_cost":50,
+				"trigger": TRIGGER_SELECT,
+				"passive":[0,1],#一个技能有多个效果且包括向目标移动，向目标移动效果必须最先触发
 
-                "effect": {
-                    EFFECT_HEALTH: (-150, 1.0, False),
-                }
-            }
-        ],
-        "passive_skills": [
-            {  # 一个技能有多个效果且包括向目标移动，向目标移动效果必须最先触发
-                "trigger": TRIGGER_SELECT,
-                "effect": {
-                    EFFECT_MOVE_GOAL: (5, False),
-                }
-            },
-            {
-                "trigger": TRIGGER_ME,
-                "effect": {
-                    EFFECT_DEFENSIVE: 100,
-                }
-            }
-        ]
-    },
-    1003: {
-        "name": "怜",
-        "health": 900,
-        "distance": 5,
-        "attack": 100,
-        "defensive": 70,
-        "tp": 0,
+				"effect":{
+					EFFECT_HEALTH:(-150, 1.0, False),
+				}
+			}
+		],
+		"passive_skills": [
+			{				#一个技能有多个效果且包括向目标移动，向目标移动效果必须最先触发
+				"trigger": TRIGGER_SELECT,
+				"effect":{
+					EFFECT_MOVE_GOAL:(5, False),
+				}
+			},
+			{
+				"trigger": TRIGGER_ME,
+				"effect":{
+					EFFECT_DEFENSIVE:100,
+				}
+			}
+		]
+	},
+	1003:{
+		"name":"怜",
+		"health":900,
+		"distance":5,
+		"attack":100,
+		"defensive":70,
+		"tp":0,
 
-        "active_skills": [
-            {
-                "name": "破甲突刺",
-                "text": "无视距离，对离自己最近的目标造成100(+1.0攻击力)伤害，并降低目标50点防御力",
-                "tp_cost": 20,
-                "trigger": TRIGGER_NEAR,
-                "passive": [],
+		"active_skills" : [
+			{
+				"name":"破甲突刺",
+				"text":"无视距离，对离自己最近的目标造成100(+1.0攻击力)伤害，并降低目标50点防御力",
+				"tp_cost":20,
+				"trigger": TRIGGER_NEAR,
+				"passive":[],
 
-                "effect": {
-                    EFFECT_HEALTH: (-100, 1.0, False),
-                    EFFECT_DEFENSIVE: -50
-                }
-            },
-            {
-                "name": "极·鬼剑术-暴风式",
-                "text": "对自己以外的所有人造成200(+1.0 攻击力)真实伤害",
-                "tp_cost": 60,
-                "trigger": TRIGGER_ALL_EXCEPT_ME,
-                "passive": [],
+				"effect":{
+					EFFECT_HEALTH:(-100, 1.0, False),
+					EFFECT_DEFENSIVE:-50
+				}
+			},
+			{
+				"name":"极·鬼剑术-暴风式",
+				"text":"对自己以外的所有人造成200(+1.0攻击力)真实伤害",
+				"tp_cost":60,
+				"trigger": TRIGGER_ALL_EXCEPT_ME,
+				"passive":[],
 
-                "effect": {
-                    EFFECT_HEALTH: (-200, 1.0, True)
-                }
-            }
-        ],
-        "passive_skills": []
-    },
-    1002: {
-        "name": "优衣",
-        "health": 1000,
-        "distance": 8,
-        "attack": 80,
-        "defensive": 60,
-        "tp": 10,
+				"effect":{
+					EFFECT_HEALTH:(-200, 1.0, True)
+				}
+			}
+		],
+		"passive_skills": []
+	},
+	1002:{
+		"name":"优衣",
+		"health":1000,
+		"distance":8,
+		"attack":80,
+		"defensive":60,
+		"tp":10,
 
-        "active_skills": [
-            {
-                "name": "花瓣射击",
-                "text": "对目标造成100(+1.5攻击力)伤害，并降低目标10点攻击力和10点TP",
-                "tp_cost": 20,
-                "trigger": TRIGGER_SELECT,
-                "passive": [],
+		"active_skills" : [
+			{
+				"name":"花瓣射击",
+				"text":"对目标造成100(+1.5攻击力)伤害，并降低目标10点攻击力和10点TP",
+				"tp_cost":20,
+				"trigger": TRIGGER_SELECT,
+				"passive":[],
 
-                "effect": {
-                    EFFECT_HEALTH: (-100, 1.5, False),
-                    EFFECT_ATTACK: -10,
-                    EFFECT_TP: -10
-                }
-            },
-            {
-                "name": "全体治愈",
-                "text": "全体回复100生命值，自己额外回复100生命值，除自己外减少3点攻击距离",
-                "tp_cost": 50,
-                "trigger": TRIGGER_ALL,
-                "passive": [0, 1],
+				"effect":{
+					EFFECT_HEALTH:(-100, 1.5, False),
+					EFFECT_ATTACK:-10,
+					EFFECT_TP:-10
+				}
+			},
+			{
+				"name":"全体治愈",
+				"text":"全体回复100生命值，自己额外回复100生命值，除自己外减少3点攻击距离",
+				"tp_cost":50,
+				"trigger": TRIGGER_ALL,
+				"passive":[0,1],
 
-                "effect": {
-                    EFFECT_HEALTH: (100, 0, False)
-                }
-            }
-        ],
-        "passive_skills": [
-            {
-                "trigger": TRIGGER_ALL_EXCEPT_ME,
-                "effect": {
-                    EFFECT_DISTANCE: -3,
-                }
-            },
-            {
-                "trigger": TRIGGER_ME,
-                "effect": {
-                    EFFECT_HEALTH: (100, 0, False)
-                }
-            }
-        ],
-    },
-    1001: {
-        "name": "日和莉",
-        "health": 900,
-        "distance": 5,
-        "attack": 100,
-        "defensive": 60,
-        "tp": 0,
+				"effect":{
+					EFFECT_HEALTH:(100, 0, False)
+				}
+			}
+		],
+		"passive_skills": [
+			{
+				"trigger": TRIGGER_ALL_EXCEPT_ME,
+				"effect":{
+					EFFECT_DISTANCE:-3,
+				}
+			},
+			{
+				"trigger": TRIGGER_ME,
+				"effect":{
+					EFFECT_HEALTH:(100, 0, False)
+				}
+			}
+		],
+	},
+	1001:{
+		"name":"日和莉",
+		"health":900,
+		"distance":5,
+		"attack":100,
+		"defensive":60,
+		"tp":0,
 
-        "active_skills": [
-            {
-                "name": "普通攻击",
-                "text": "对目标造成0(+1.0攻击力)伤害",
-                "tp_cost": 0,
-                "trigger": TRIGGER_SELECT,
-                "passive": [],
+		"active_skills" : [
+			{
+				"name":"普通攻击",
+				"text":"对目标造成0(+1.0攻击力)伤害",
+				"tp_cost":0,
+				"trigger": TRIGGER_SELECT,
+				"passive":[],
 
-                "effect": {
-                    EFFECT_HEALTH: (0, 1, False)
-                }
-            },
-            {
-                "name": "勇气迸发",
-                "text": "自身增加50点攻击力和1点攻击距离",
-                "tp_cost": 20,
-                "trigger": TRIGGER_ME,
-                "passive": [],
+				"effect":{
+					EFFECT_HEALTH:(0, 1, False)
+				}
+			},
+			{
+				"name":"勇气迸发",
+				"text":"自身增加50点攻击力和1点攻击距离",
+				"tp_cost":20,
+				"trigger": TRIGGER_ME,
+				"passive":[],
 
-                "effect": {
-                    EFFECT_ATTACK: 70,
-                    EFFECT_DISTANCE: 1
-                }
-            },
-            {
-                "name": "日和莉烈焰冲击",
-                "text": "对目标造成300(+2.0攻击力)伤害，若目标被击倒，自身回复60点tp并继续下一回合",
-                "tp_cost": 100,
-                "trigger": TRIGGER_SELECT,
-                "passive": [],
+				"effect":{
+					EFFECT_ATTACK:70,
+					EFFECT_DISTANCE:1
+				}
+			},
+			{
+				"name":"日和莉烈焰冲击",
+				"text":"对目标造成300(+2.0攻击力)伤害，若目标被击倒，自身回复60点tp并继续下一回合",
+				"tp_cost":100,
+				"trigger": TRIGGER_SELECT,
+				"passive":[],
 
-                "effect": {
-                    EFFECT_HEALTH: (-300, 2, False),
-                    EFFECT_OUT_TP: 60,
-                    EFFECT_OUT_TURN: 1
-                }
-            }
-        ],
-        "passive_skills": []
+				"effect":{
+					EFFECT_HEALTH:(-300, 2, False),
+					EFFECT_OUT_TP:60,
+					EFFECT_OUT_TURN:1
+				}
+			}
+		],
+		"passive_skills": []
 
-    }
+	}
 
 }

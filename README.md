@@ -1,7 +1,8 @@
 # pcr大乱斗
 一个基于hoshino_bot的小游戏，玩法类似大富翁<br>
 目前有两个版本，一个是贵族决斗版 pcr_scrimmage_duel ，一个普通版 pcr_scrimmage<br>
-贵族版决出胜利者后可按排名获得贵族决斗游戏的金币
+贵族版决出胜利者后可按排名获得贵族决斗游戏的金币<br>
+**该项目随时都有可能更新或修复bug，详情查看commits**
 
 ## 安装
 将 pcr_scrimmage 这个文件夹直接丢到hoshino里的moudle里，然后在__bot__.py里的MODULES_ON加上"pcr_scrimmage"即可<br>
