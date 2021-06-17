@@ -937,7 +937,7 @@ async def game_create(bot, ev: CQEvent):
 					daily_card_limiter.increase(guid)
 					dailynum = daily_card_limiter.get_num(guid)
 					gold = GOLD_DICT[len(scrimmage.rank)][i]
-					score_counter._add_score(ev.group_id, uid, gold)
+					score_counter._add_score(ev.group_id, scrimmage.rank[i+1], gold)
 					gold_msg = f'，获得{gold}金币({dailynum}/{str(MAX_GUESS_NUM)})'
 				msg.append(f'第{i+1}名：{user_card}{gold_msg}')
 			await bot.send(ev, '\n'.join(msg))
