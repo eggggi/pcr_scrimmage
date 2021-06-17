@@ -1,11 +1,3 @@
-'''
-Author: your name
-Date: 2021-06-14 22:27:05
-LastEditTime: 2021-06-14 22:30:28
-LastEditors: your name
-Description: In User Settings Edit
-FilePath: \pcr_scrimmage\pcr_scrimmage\runway_case.py
-'''
 ##跑道上的事件
 
 """
@@ -27,40 +19,40 @@ CASE_MOVE = 5  		# 移动位置事件
 
 
 RUNWAY_CASE = [
-    {
-        "text": "",  # 占个空位，代表不触发事件
-        "name": "",
-        "color": (0, 0, 0),
-        "range": (0, 0)
-    },
-    {
-        "text": "{0}了{1}点生命值",
-        "name": "生",
-        "color": (30, 230, 100),
-        "range": (-100, 100)
-    },
-    {
-        "text": "{0}了{1}点防御力",
-        "name": "防",
-        "color": (225, 195, 0),
-        "range": (-20, 20)
-    },
-    {
-        "text": "{0}了{1}点攻击力",
-        "name": "攻",
-        "color": (255, 0, 0),
-        "range": (-50, 50)
-    },
-    {
-        "text": "{0}了{1}点TP值",
-        "color": (30, 144, 255),
-        "name": "tp",
-        "range": (-30, 30)
-    },
-    {
-        "text": "向{0}移动了{1}步",
-        "name": "移",
-        "color": (100, 100, 100),
-        "range": (-10, 10)
-    }
+	{
+		"text": "",  # 占个空位，代表不触发事件
+		"name": "",
+		"color": (0, 0, 0),
+		"range": (0, 0)
+	},
+	{
+		"text": "{0}了{1}点生命值",
+		"name": "生",
+		"color": (30, 230, 100),
+		"range": (-100, 100)
+	},
+	{
+		"text": "{0}了{1}点防御力",
+		"name": "防",
+		"color": (225, 195, 0),
+		"range": (-20, 20)
+	},
+	{
+		"text": "{0}了{1}点攻击力",
+		"name": "攻",
+		"color": (255, 0, 0),
+		"range": (-50, 50)
+	},
+	{
+		"text": "{0}了{1}点TP值",
+		"color": (30, 144, 255),
+		"name": "tp",
+		"range": (-30, 30)
+	},
+	{
+		"text": "向{0}移动了{1}步",
+		"name": "移",
+		"color": (100, 100, 100),
+		"range": (-10, 10)
+	}
 ]
