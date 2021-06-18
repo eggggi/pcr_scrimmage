@@ -46,6 +46,7 @@ logger = log.new_logger('pcr_scrimmage')
 if not os.path.exists(IMAGE_PATH):
 	os.mkdir(IMAGE_PATH)
 	logger.info('create folder succeed')
+IMAGE_PATH = 'pcr_scrimmage'
 
 async def get_user_card_dict(bot, group_id):
 	mlist = await bot.get_group_member_list(group_id=group_id)
@@ -379,7 +380,7 @@ class PCRScrimmage:
 				self.getPlayerObj(iter_player_id).distanceChange(ROUND_DISTANCE)
 				self.getPlayerObj(iter_player_id).attackChange(ROUND_ATTACK)
 			self.dice_num = 1
-	
+
 		await self.caseTrigger(player, bot, ev)
 
 	#触发跑道事件
@@ -430,10 +431,10 @@ class PCRScrimmage:
 
 		if case_num == CASE_MOVE and num != 0:
 			self.refreshNowImageStatu()
-			image_path = R.img(f'{IMAGE_PATH}/{ev.group_id}.jpg').path
+			image = R.img(f'{IMAGE_PATH}/{ev.group_id}.png')
 			img = self.getNowImage()
-			img.save(image_path)
-			await bot.send(ev, R.img(image_path).cqcode)
+			img.save(image.path)
+			await bot.send(ev, image.cqcode)
 			await asyncio.sleep(1)
 			await self.caseTrigger(player, bot, ev)
 		if player.now_stage == NOW_STAGE_OUT:
@@ -457,7 +458,7 @@ class PCRScrimmage:
 			if skill_tp_cost > use_player_obj.tp:		#检查tp是否足够
 				await bot.send(ev, 'tp不足，无法使用这个技能')
 				return RET_ERROR
-				
+			
 			#先扣除tp
 			use_player_obj.tpChange(-skill_tp_cost)
 			
@@ -654,7 +655,7 @@ class PCRScrimmage:
 		
 		#通用击倒tp
 		if goal_player.now_stage == NOW_STAGE_OUT:
-			use_skill_player.tpChange(HIT_DOWN_TP)	
+			use_skill_player.tpChange(HIT_DOWN_TP)
 			back_msg.append(f'[CQ:at,qq={goal_player.user_id}]出局')
 
 		#效果击倒tp
@@ -897,13 +898,14 @@ PROCESS_WAIT_TIME = 1
 
 @sv.on_fullmatch(('创建大乱斗'))
 async def game_create(bot, ev: CQEvent):
-	if mgr.is_playing(ev.group_id):
+	gid, uid = ev.group_id, ev.user_id
+
+	if mgr.is_playing(gid):
 		await bot.finish(ev, '游戏仍在进行中…')
 
-	image_path = R.img(f'{IMAGE_PATH}/{ev.group_id}.jpg').path
-	if os.path.exists(image_path):
-		os.remove(image_path)
-	gid, uid = ev.group_id, ev.user_id
+	image = R.img(f'{IMAGE_PATH}/{gid}.png')
+	if os.path.exists(image.path):
+		os.remove(image.path)
 
 	with mgr.start(gid, uid) as scrimmage:
 		await bot.send(ev, f'大乱斗房间已创建，等待加入中。。。\n当前人数({scrimmage.getPlayerNum()}/{MAX_PLAYER})\n（发送“加入大乱斗”加入）')
@@ -914,8 +916,8 @@ async def game_create(bot, ev: CQEvent):
 			if scrimmage.now_statu == NOW_STATU_OPEN :
 				scrimmage.gameOpen()
 				img = scrimmage.getNowImage()
-				img.save(image_path)
-				await bot.send(ev, R.img(image_path).cqcode)
+				img.save(image.path)
+				await bot.send(ev, image.cqcode)
 				await asyncio.sleep(PROCESS_WAIT_TIME)
 				await scrimmage.stageRemind(bot, ev)
 				break
@@ -937,7 +939,7 @@ async def game_create(bot, ev: CQEvent):
 					daily_card_limiter.increase(guid)
 					dailynum = daily_card_limiter.get_num(guid)
 					gold = GOLD_DICT[len(scrimmage.rank)][i]
-					score_counter._add_score(ev.group_id, scrimmage.rank[i+1], gold)
+					score_counter._add_score(gid, scrimmage.rank[i+1], gold)
 					gold_msg = f'，获得{gold}金币({dailynum}/{str(MAX_GUESS_NUM)})'
 				msg.append(f'第{i+1}名：{user_card}{gold_msg}')
 			await bot.send(ev, '\n'.join(msg))
@@ -993,7 +995,7 @@ async def select_role(bot, ev: CQEvent):
 	if uid not in scrimmage.player_list:
 		return
 
-	image_path = R.img(f'{IMAGE_PATH}/{ev.group_id}.png').path
+	image = R.img(f'{IMAGE_PATH}/{gid}.png')
 
 	character = chara.fromname(ev.message.extract_plain_text())
 	if character.id != chara.UNKNOWN and character.id in ROLE:
@@ -1001,8 +1003,8 @@ async def select_role(bot, ev: CQEvent):
 		player.initData(character.id, character, scrimmage)
 
 		img = player.role_icon
-		img.save(image_path)
-		await bot.send(ev, f"您选择的角色是：{player.name}\n{R.img(image_path).cqcode}", at_sender=True)
+		img.save(image.path)
+		await bot.send(ev, f"您选择的角色是：{player.name}\n{image.cqcode}", at_sender=True)
 
 		if scrimmage.checkAllPlayerSelectRole():
 			await asyncio.sleep(PROCESS_WAIT_TIME)
@@ -1032,10 +1034,10 @@ async def throw_dice(bot, ev: CQEvent):
 	await scrimmage.throwDice(uid, step, bot, ev)
 	scrimmage.refreshNowImageStatu()
 
-	image_path = R.img(f'{IMAGE_PATH}/{ev.group_id}.jpg').path
+	image = R.img(f'{IMAGE_PATH}/{gid}.png')
 	img = scrimmage.getNowImage()
-	img.save(image_path)
-	await bot.send(ev, R.img(image_path).cqcode)
+	img.save(image.path)
+	await bot.send(ev, image.cqcode)
 	await asyncio.sleep(PROCESS_WAIT_TIME)
 	await scrimmage.stageRemind(bot, ev)
 
@@ -1073,10 +1075,10 @@ async def use_skill(bot, ev: CQEvent):
 	if ret == RET_ERROR:
 		return
 
-	image_path = R.img(f'{IMAGE_PATH}/{ev.group_id}.jpg').path
+	image = R.img(f'{IMAGE_PATH}/{gid}.png')
 	img = scrimmage.getNowImage()
-	img.save(image_path)
-	await bot.send(ev, R.img(image_path).cqcode)
+	img.save(image.path)
+	await bot.send(ev, image.cqcode)
 	await asyncio.sleep(PROCESS_WAIT_TIME)
 	await scrimmage.stageRemind(bot, ev)
 
@@ -1100,10 +1102,10 @@ async def throw_dice(bot, ev: CQEvent):
 	if scrimmage.now_statu == NOW_STATU_OPEN:
 		scrimmage.turnChange()
 		scrimmage.refreshNowImageStatu()
-		image_path = R.img(f'{IMAGE_PATH}/{ev.group_id}.jpg').path
+		image = R.img(f'{IMAGE_PATH}/{gid}.png')
 		img = scrimmage.getNowImage()
-		img.save(image_path)
-		await bot.send(ev, R.img(image_path).cqcode)
+		img.save(image.path)
+		await bot.send(ev, image.cqcode)
 		await asyncio.sleep(PROCESS_WAIT_TIME)
 		await scrimmage.stageRemind(bot, ev)
 	
