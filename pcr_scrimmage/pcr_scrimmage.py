@@ -1018,10 +1018,14 @@ async def game_create(bot, ev: CQEvent):
 		os.remove(image.path)
 
 	with mgr.start(gid, uid) as scrimmage:
-		await bot.send(ev, f'大乱斗房间已创建，等待加入中。。。\n当前人数({scrimmage.getPlayerNum()}/{MAX_PLAYER})\n（发送“加入大乱斗”加入）')
+		msg = ['大乱斗房间已创建，等待加入中。。。',
+				f'{WAIT_TIME}分钟后不开始会自动结束',
+				f'当前人数({scrimmage.getPlayerNum()}/{MAX_PLAYER})',
+				f'（发送“加入大乱斗”加入）']
+		await bot.send(ev, '\n'.join(msg))
 		scrimmage.user_card_dict = await get_user_card_dict(bot, gid)
-
-		while True:  # 从等待到正式开始的循环等待
+		
+		for i in range(WAIT_TIME * 60):				#从等待到正式开始的循环等待
 			await asyncio.sleep(WAIT_TIME)
 			if scrimmage.now_statu == NOW_STATU_OPEN:
 				scrimmage.gameOpen()
@@ -1069,7 +1073,7 @@ async def game_join(bot, ev: CQEvent):
 		msg.append(user_card)
 	await bot.send(ev, f'已加入\n当前人数({scrimmage.getPlayerNum()}/{MAX_PLAYER})\n{" ".join(msg)}')
 	if scrimmage.getPlayerNum() == MAX_PLAYER:
-		await bot.send(ev, '人数已满，可开始游戏。\n（发送“开始大乱斗”开始）')
+		await bot.send(ev, f'人数已满，可开始游戏。\n（[CQ:at,qq={scrimmage.room_master}]发送“开始大乱斗”开始）')
 
 
 @sv.on_fullmatch('开始大乱斗')
@@ -1088,7 +1092,9 @@ async def game_start(bot, ev: CQEvent):
 	role_list = '游戏开始，请选择角色，当前可选角色：\n（'
 	for role in ROLE.values():
 		role_list += f'{role["name"]} '
-	role_list += ')\n输入“角色详情 角色名” 可查看角色属性和技能\n（所有人都选择角色后自动开始）'
+	role_list += ')\n输入“角色详情 角色名” 可查看角色属性和技能\n（所有人都选择角色后自动开始）\n'
+	for player_id in scrimmage.player_list:
+		role_list += f'[CQ:at,qq={player_id}]'
 	await bot.send(ev, role_list)
 
 
