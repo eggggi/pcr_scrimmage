@@ -189,7 +189,7 @@ ROLE = {
 				"passive":[],
 
 				"effect":{
-					EFFECT_HEALTH:(100, 0, False),
+					EFFECT_HEALTH:(150, 0, False),
 				}
 			},
 			{
@@ -219,6 +219,65 @@ ROLE = {
 			}
 		]
 	},
+
+	1036:{
+		"name":"镜华",
+		"health":700,
+		"distance":15,
+		"attack":150,
+		"defensive":50,
+		"tp":0,
+
+		"active_skills" : [
+			{
+				"name":"普通攻击",
+				"text":"对目标造成0(+1.0攻击力)伤害",
+				"tp_cost":10,
+				"trigger": TRIGGER_SELECT,
+				"passive":[],
+
+				"effect":{
+					EFFECT_HEALTH:(0, 1, False)
+				}
+			},
+			{
+				"name":"魔法增幅",
+				"text":"自身增加50点攻击力",
+				"tp_cost":30,
+				"trigger": TRIGGER_ME,
+				"passive":[],
+
+				"effect":{
+					EFFECT_ATTACK:50
+				}
+			},
+			{
+				"name":"冰枪术",
+				"text":"对目标造成20(+1.8攻击力)伤害",
+				"tp_cost":30,
+				"trigger": TRIGGER_SELECT,
+				"passive":[],
+
+				"effect":{
+					EFFECT_HEALTH:(-20, 1.8, False)
+				}
+			},
+			{
+				"name":"宇宙苍蓝闪",
+				"text":"无视距离，对目标造成50(+2.5攻击力)伤害",
+				"tp_cost":70,
+				"trigger": TRIGGER_SELECT,
+				"passive":[],
+
+				"effect":{
+					EFFECT_HEALTH:(-50, 2.5, False),
+					EFFECT_IGNORE_DIST:0
+				}
+			}
+		],
+		"passive_skills": []
+	},
+
 	1003:{
 		"name":"怜",
 		"health":900,
@@ -326,12 +385,12 @@ ROLE = {
 			{
 				"name":"勇气迸发",
 				"text":"自身增加50点攻击力和1点攻击距离",
-				"tp_cost":20,
+				"tp_cost":30,
 				"trigger": TRIGGER_ME,
 				"passive":[],
 
 				"effect":{
-					EFFECT_ATTACK:70,
+					EFFECT_ATTACK:50,
 					EFFECT_DISTANCE:1
 				}
 			},

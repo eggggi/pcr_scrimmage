@@ -324,6 +324,7 @@ class PCRScrimmage:
 		self.lock_turn = 0					#回合锁定，x回合内都是同个玩家
 		self.now_playing_players = []		#当前正在游玩的玩家id	[xxx, xxx]
 		self.rank = {}						#结算排行	{1:xxx,2:xxx}
+		self.player_satge_timer = 0			#玩家阶段计时器。回合切换时重置
 
 		self.user_card_dict = {}			#群内所有成员信息
 
@@ -414,7 +415,22 @@ class PCRScrimmage:
 		self.refreshNowImageStatu()
 
 
-	
+
+	#玩家阶段计时器，超过一定时间不操作直接判负
+	async def PlayerStageTimer(self, gid, bot, ev):
+		self.player_satge_timer += 1
+		if self.player_satge_timer > STAGE_WAIT_TIME:
+			now_turn_player = self.getNowTurnPlayerObj()
+			self.outDispose(now_turn_player)
+			await bot.send(ev, f'[CQ:at,qq={now_turn_player.user_id}]已超时，出局')
+			self.turnChange()			#回合切换
+			self.refreshNowImageStatu()	#刷新当前显示状态
+			image = R.img(f'{IMAGE_PATH}/{gid}.png')
+			img = self.getNowImage()
+			img.save(image.path)
+			await bot.send(ev, image.cqcode)
+			await asyncio.sleep(PROCESS_WAIT_TIME)
+			await self.stageRemind(bot, ev)
 	
 	#回合改变，到下一个玩家
 	def turnChange(self):
@@ -423,6 +439,8 @@ class PCRScrimmage:
 			now_turn_player.stageChange(NOW_STAGE_WAIT)#已结束的玩家
 		else:
 			self.lock_turn = 0 #如果玩家已出局，则取消回合锁定
+		
+		self.player_satge_timer = 0 #重置玩家阶段计时器
 		
 		#游戏胜利或结束则直接退出
 		if (self.now_statu == NOW_STATU_WIN or 
@@ -528,7 +546,7 @@ class PCRScrimmage:
 			await asyncio.sleep(1)
 			await self.caseTrigger(player, bot, ev)
 		if player.now_stage == NOW_STAGE_OUT:
-			await bot.send(ev, f'{uid2card(player.user_id, self.user_card_dict)}出局')
+			await bot.send(ev, f'[CQ:at,qq={player.user_id}]出局')
 			self.turnChange()	#回合切换
 			self.refreshNowImageStatu()	#刷新当前显示状态
 		else:
@@ -774,10 +792,11 @@ class PCRScrimmage:
 	async def stageRemind(self, bot, ev: CQEvent):
 		player = self.getNowTurnPlayerObj()
 		stage = player.now_stage
+		msg = [f'回合剩余{WAIT_TIME * (STAGE_WAIT_TIME - self.player_satge_timer)}秒']
 		if stage == NOW_STAGE_DICE:
-			await bot.send(ev, f'[CQ:at,qq={player.user_id}]的丢色子阶段(发送 丢色子)')
+			msg.append(f'[CQ:at,qq={player.user_id}]的丢色子阶段(发送 丢色子)')
+			await bot.send(ev, "\n".join(msg))
 		elif stage == NOW_STAGE_SKILL:
-			msg = []
 			msg.append(f'[CQ:at,qq={player.user_id}]的放技能阶段：\n(发送技能编号，如需选择目标则@目标)')
 			skill_list = player.active_skills
 			skill_num = 0
@@ -1002,9 +1021,11 @@ class manager:
 
 
 mgr = manager() # 初始化管理器
-WAIT_TIME = 3
-PROCESS_WAIT_TIME = 1
+WAIT_TIME = 3			#每x秒检查一次房间状态
+PROCESS_WAIT_TIME = 1	#避免发送太快增加的缓冲时间
 
+STAGE_WAIT_TIME = 30	#玩家阶段等待时间，超过这个时间判负。
+						#实际时间是 STAGE_WAIT_TIME * WAIT_TIME
 
 @sv.on_fullmatch('创建大乱斗')
 async def game_create(bot, ev: CQEvent):
@@ -1027,6 +1048,7 @@ async def game_create(bot, ev: CQEvent):
 		
 		for i in range(WAIT_TIME * 60):				#从等待到正式开始的循环等待
 			await asyncio.sleep(WAIT_TIME)
+			await scrimmage.PlayerStageTimer(gid, bot, ev)		#玩家阶段计时器
 			if scrimmage.now_statu == NOW_STATU_OPEN:
 				scrimmage.gameOpen()
 				img = scrimmage.getNowImage()
