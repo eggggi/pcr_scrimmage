@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 '''
 
-from typing import List
+from typing import Dict, List
 import os
 import asyncio
 import math
@@ -30,7 +30,7 @@ from hoshino.modules.priconne import chara
 
 from .role import (ROLE, 
 				   EFFECT_DEFENSIVE, EFFECT_ATTACK, EFFECT_DISTANCE, EFFECT_HEALTH, EFFECT_MOVE, EFFECT_TP,
-				   EFFECT_MOVE_GOAL, EFFECT_OUT_TP, EFFECT_OUT_TURN, EFFECT_IGNORE_DIST,
+				   EFFECT_MOVE_GOAL, EFFECT_OUT_TP, EFFECT_OUT_TURN, EFFECT_IGNORE_DIST, EFFECT_AOE,
 				   TRIGGER_ME, TRIGGER_ALL_EXCEPT_ME, TRIGGER_ALL, TRIGGER_SELECT, TRIGGER_NEAR)
 from .runway_case import (CASE_NONE, CASE_ATTACK, CASE_DEFENSIVE, CASE_HEALTH, 
 						  CASE_MOVE, CASE_TP, RUNWAY_CASE)
@@ -573,11 +573,26 @@ class PCRScrimmage:
 		return RET_SCUESS, msg
 
 	#技能效果生效
-	def skillEffect(self, use_skill_player:Role, goal_player:Role, skill_effect, back_msg:List):
+	def skillEffect(self, use_skill_player:Role, goal_player:Role, skill_effect_base, back_msg:List):
 		if goal_player.now_stage == NOW_STAGE_OUT : return RET_NORMAL, ''
 
+		skill_effect:Dict = skill_effect_base.copy()	#拷贝一份，避免修改保存在角色信息的技能效果
 		use_player_name = uid2card(use_skill_player.user_id, self.user_card_dict)
 		goal_player_name = uid2card(goal_player.user_id, self.user_card_dict)
+		
+		#aoe效果
+		if EFFECT_AOE in skill_effect:
+			aoe_dist = skill_effect[EFFECT_AOE]	# aoe范围
+			del skill_effect[EFFECT_AOE] # 删掉aoe效果，避免无限递归
+			for i in range(goal_player.now_location - aoe_dist, goal_player.now_location + aoe_dist):
+				location = i #处理后的位置，避免下标不在跑道上的数组里
+				if location >= len(self.runway) : location -= len(self.runway)
+				elif location < 0 : location = len(self.runway) + location
+				if len(self.runway[location]["players"]) > 0:
+					for runway_player_id in self.runway[location]["players"]:
+						runway_player_obj = self.getPlayerObj(runway_player_id)
+						self.skillEffect(use_skill_player, runway_player_obj, skill_effect, back_msg)
+			skill_effect.clear() # 递归完成清空所有效果，不需要再次触发
 
 		#向目标移动
 		if EFFECT_MOVE_GOAL in skill_effect:
@@ -651,19 +666,18 @@ class PCRScrimmage:
 		if EFFECT_HEALTH in skill_effect:
 			num = skill_effect[EFFECT_HEALTH][0]		#基础数值
 			addition = skill_effect[EFFECT_HEALTH][1]	#加成比例
-			is_real = skill_effect[EFFECT_HEALTH][2]	#是否是真实伤害
 			use_player_atk = use_skill_player.attack	#自身攻击力
-			goal_player_def = goal_player.defensive		#目标防御力
 			if num <= 0 :#扣血
+				is_real = skill_effect[EFFECT_HEALTH][2]	#是否是真实伤害
+				goal_player_def = goal_player.defensive		#目标防御力
 				num = abs(num) + use_player_atk * addition	#计算加成后的数值
 				#如果是真实伤害则不计算目标的防御
 				if not is_real:
 					num = hurt_defensive_calculate(num, goal_player_def)	#计算目标防御力后的数值
 				num = math.floor(num)					#小数数值向下取整
 				num = 0 - num							#变回负数，代表扣血
-			else:#回血
+			else :#回血
 				num = num + use_player_atk * addition	#计算加成后的数值
-
 			goal_player.healthChange(num)
 
 			if num < 0:
@@ -728,6 +742,7 @@ class PCRScrimmage:
 	#获取当前玩家数量
 	def getPlayerNum(self):
 		return len(self.player_list)
+	#获取玩家对象
 	def getPlayerObj(self, player_id):
 		player:Role = self.player_list[player_id]
 		return player
