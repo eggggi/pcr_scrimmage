@@ -682,13 +682,12 @@ class PCRScrimmage:
 
 			if num < 0:
 				back_msg.append(f'{goal_player_name}受到了{abs(num)}点伤害')
+				#击倒回复tp
+				if goal_player.now_stage == NOW_STAGE_OUT:
+					use_skill_player.tpChange(HIT_DOWN_TP)
+					back_msg.append(f'[CQ:at,qq={goal_player.user_id}]出局')
 			else:
 				back_msg.append(f'{goal_player_name}增加了{num}点生命值')
-		
-		#通用击倒tp
-		if goal_player.now_stage == NOW_STAGE_OUT:
-			use_skill_player.tpChange(HIT_DOWN_TP)
-			back_msg.append(f'[CQ:at,qq={goal_player.user_id}]出局')
 
 		#效果击倒tp
 		if EFFECT_OUT_TP in skill_effect:
