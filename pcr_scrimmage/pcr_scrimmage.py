@@ -87,6 +87,8 @@ def uid2card(uid, user_card_dict):
 	"""返回 uid
 	存疑, 这句没太看懂;
 	为什么 uid 不在字典键里却可以获取到 user_card_dict[uid] ?
+	
+	A:这是py的特殊语法。如果 uid 不在 user_card_dict 里，则返回 str(uid) ，否则返回 user_card_dict[uid]
 	"""
 	return str(uid) if uid not in user_card_dict.keys() else user_card_dict[uid]
 
