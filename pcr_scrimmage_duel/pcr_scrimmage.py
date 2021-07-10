@@ -951,7 +951,7 @@ async def game_create(bot, ev: CQEvent):
 		await bot.send(ev, '\n'.join(msg))
 		scrimmage.user_card_dict = await get_user_card_dict(bot, gid)
 		
-		for i in range(WAIT_TIME * 60):				#从等待到正式开始的循环等待
+		for i in range(60):				#从等待到正式开始的循环等待
 			await asyncio.sleep(WAIT_TIME)
 			if scrimmage.now_statu == NOW_STATU_OPEN :
 				scrimmage.gameOpen()
