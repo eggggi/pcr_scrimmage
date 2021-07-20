@@ -58,7 +58,13 @@ from .runway_case import (
 						  )
 
 # 模块名为 pcr_scrimmage, 功能默认启用, 默认在功能列表(lssv)中可见
-sv = Service('pcr_scrimmage', manage_priv=priv.ADMIN, enable_on_default=True, visible=True)
+sv = Service(	'pcr_scrimmage',
+				manage_priv=priv.ADMIN,
+				enable_on_default=True,
+				visible=True,
+				bundle='pcr娱乐',
+				help_='[大乱斗帮助] 击剑')
+
 FILE_PATH = os.path.dirname(__file__)       # 定义当前文件(pcr_scrimmage.py)路径
 IMAGE_PATH = R.img('pcr_scrimmage').path    # 获取 PCR 大乱斗资源文件存储根目录
 logger = log.new_logger('pcr_scrimmage')
@@ -675,7 +681,8 @@ class PCRScrimmage:
 		
 		#aoe效果
 		if EFFECT_AOE in skill_effect:
-			aoe_dist = skill_effect[EFFECT_AOE]	# aoe范围
+			aoe_dist = skill_effect[EFFECT_AOE][0]	# aoe范围
+			to_self = skill_effect[EFFECT_AOE][1]	# 是否对自己生效
 			del skill_effect[EFFECT_AOE] # 删掉aoe效果，避免无限递归
 			for i in range(goal_player.now_location - aoe_dist, goal_player.now_location + aoe_dist):
 				location = i #处理后的位置，避免下标不在跑道上的数组里
@@ -683,6 +690,7 @@ class PCRScrimmage:
 				elif location < 0 : location = len(self.runway) + location
 				if len(self.runway[location]["players"]) > 0:
 					for runway_player_id in self.runway[location]["players"]:
+						if runway_player_id == use_skill_player.user_id and not to_self : continue
 						runway_player_obj = self.getPlayerObj(runway_player_id)
 						self.skillEffect(use_skill_player, runway_player_obj, skill_effect, back_msg)
 			skill_effect.clear() # 递归完成清空所有效果，不需要再次触发

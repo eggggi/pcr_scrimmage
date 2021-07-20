@@ -65,7 +65,7 @@ EFFECT_MOVE = "move"					#移动，正数为前进负数为后退（触发跑道
 EFFECT_MOVE_GOAL = "move_goal"			#向目标移动（一个技能有多个效果且包括向目标移动，向目标移动效果必须最先触发） tuple元组(移动距离，是否无视攻击范围)
 										#这个效果必须放在被动（不触发跑道事件）
 EFFECT_IGNORE_DIST = "ignore_dist"		#无视距离效果，参数填啥都行，不会用到
-EFFECT_AOE = "aoe"						#范围效果			number (半径范围)
+EFFECT_AOE = "aoe"						#范围效果			tuple (半径范围, 是否对自己生效)
 
 EFFECT_OUT_TP = "make_it_out_tp"		#令目标出局时tp变动		number
 EFFECT_OUT_TURN = "make_it_out_turn"	#令目标出局时锁定回合	number（锁定回合：不会切换到下一个玩家，当前玩家继续丢色子和放技能）
@@ -102,12 +102,12 @@ ROLE = {
 			},
 			{
 				"name":"格林爆裂",
-				"text":"对所有人造成100(+1.5攻击力)伤害",
+				"text":"对所有人造成200(+1.5攻击力)伤害",
 				"tp_cost":50,
 				"trigger": TRIGGER_ALL_EXCEPT_ME,
 				"passive":[],
 				"effect":{
-					EFFECT_HEALTH:(-100, 1.5, False),
+					EFFECT_HEALTH:(-200, 1.5, False),
 				}
 			}
 		],
@@ -132,12 +132,12 @@ ROLE = {
 		"active_skills" : [
 			{
 				"name":"三连击",
-				"text":"向目标移动3格，并对目标造成100(+1.0攻击力)伤害",
+				"text":"向目标移动3格，并对目标造成100(+1.5攻击力)伤害",
 				"tp_cost":20,
 				"trigger": TRIGGER_SELECT,
 				"passive":[0],
 				"effect":{
-					EFFECT_HEALTH:(-100, 1, False)
+					EFFECT_HEALTH:(-100, 1.5, False)
 				}
 			},
 			{
@@ -184,13 +184,14 @@ ROLE = {
 			},
 			{
 				"name":"超大饭团",
-				"text":"回复自身150生命值",
+				"text":"回复自身150生命值，并增加10点攻击力",
 				"tp_cost":20,
 				"trigger": TRIGGER_ME,
 				"passive":[],
 
 				"effect":{
 					EFFECT_HEALTH:(150, 0, False),
+					EFFECT_ATTACK:10
 				}
 			},
 			{
@@ -297,7 +298,7 @@ ROLE = {
 
 				"effect":{
 					EFFECT_HEALTH:(-100, 1.0, False),
-					EFFECT_AOE:4
+					EFFECT_AOE:(4, True)
 				}
 			},
 			{
@@ -309,7 +310,7 @@ ROLE = {
 
 				"effect":{
 					EFFECT_HEALTH:(-150, 1.5, False),
-					EFFECT_AOE:8
+					EFFECT_AOE:(8, True)
 				}
 			},
 			{
