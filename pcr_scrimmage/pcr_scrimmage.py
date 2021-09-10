@@ -1073,7 +1073,6 @@ async def game_create(bot, ev: CQEvent):
 		
 		for i in range(60):				#从等待到正式开始的循环等待
 			await asyncio.sleep(WAIT_TIME)
-			await scrimmage.PlayerStageTimer(gid, bot, ev)		#玩家阶段计时器
 			if scrimmage.now_statu == NOW_STATU_OPEN:
 				scrimmage.gameOpen()
 				img = scrimmage.getNowImage()
@@ -1088,6 +1087,7 @@ async def game_create(bot, ev: CQEvent):
 		if scrimmage.now_statu == NOW_STATU_OPEN:
 			while True:  # 开始后的循环等待
 				await asyncio.sleep(WAIT_TIME)
+				await scrimmage.PlayerStageTimer(gid, bot, ev)		#玩家阶段计时器
 				if (scrimmage.now_statu == NOW_STATU_END or
 						scrimmage.now_statu == NOW_STATU_WIN):
 					break
