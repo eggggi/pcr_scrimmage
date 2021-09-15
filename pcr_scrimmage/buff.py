@@ -1,5 +1,5 @@
 # buff会一直保存在玩家身上，达到触发条件时扣除触发次数，次数扣完后删除
-# 保存在玩家身上的buff结构 (BuffType.xx, 数值, 可触发次数)
+# buff结构 (BuffType.xx, 数值, 可触发次数)
 
 from enum import IntEnum
 from .attr import Attr
@@ -17,6 +17,9 @@ class BuffEffectType(IntEnum):
 	Shield		= 2		#护盾，配合 BuffTriggerType.Hurt 使用，数值为护盾值
 
 #buff类型
+# 数字第1位是BuffTriggerType，第3位是BuffEffectType，最后两位在1 3位相同时递增
+# （其实遵不遵守这个规矩都可以，保证不会重复就行了）
+# （不过也不排除以后会根据这个规则做判断 _(:з)∠)_ ）
 class BuffType(IntEnum):
 	NormalAttrAtkUp		= 10101
 	NormalAttrAtkDown	= 10102
@@ -26,10 +29,11 @@ class BuffType(IntEnum):
 
 Buff = {
 	BuffType.NormalAttrAtkUp:{
-		'name':'攻击增强',
+		'name':'强化',
 		'text':'增加{0}点攻击力，持续{1}回合',
 		'trigger_type':BuffTriggerType.Normal,
 		'effect_type':BuffEffectType.Attr,
+
 		'attr_type':Attr.ATTACK,
 	},
 	BuffType.NormalAttrAtkDown:{
@@ -37,13 +41,15 @@ Buff = {
 		'text':'降低{0}点攻击力，持续{1}回合',
 		'trigger_type':BuffTriggerType.Normal,
 		'effect_type':BuffEffectType.Attr,
+
 		'attr_type':Attr.ATTACK,
 	},
 	BuffType.TurnAttrAtkUp:{
-		'name':'攻击成长',
+		'name':'越战越勇',
 		'text':'每回合永久增加{0}点攻击力，持续{1}回合',
 		'trigger_type':BuffTriggerType.Turn,
 		'effect_type':BuffEffectType.Attr,
+
 		'attr_type':Attr.ATTACK,
 	},
 	BuffType.TurnAttrAtkDown:{
@@ -51,6 +57,7 @@ Buff = {
 		'text':'每回合永久降低{0}点攻击力，持续{1}回合',
 		'trigger_type':BuffTriggerType.Turn,
 		'effect_type':BuffEffectType.Attr,
+
 		'attr_type':Attr.ATTACK,
 	},
 	BuffType.Shield:{

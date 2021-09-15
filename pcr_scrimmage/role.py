@@ -95,7 +95,7 @@ TRIGGER_ME = "me"								#只对自己有效
 TRIGGER_NEAR = "near"							#离自己最近的目标
 
 from .attr import Attr
-from .buff import Buff, BuffType
+from .buff import BuffType
 
 # 角色字典
 ROLE = {
@@ -229,7 +229,7 @@ ROLE = {
 			{
 				"name":"公主突袭",
 				"text":"向目标移动5格，对目标造成150(+1.0自身攻击力)伤害，并增加自身50防御",
-				"tp_cost":0,
+				"tp_cost":50,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[0,1],
 
@@ -443,7 +443,7 @@ ROLE = {
 			{
 				"name":"格挡",
 				"text":"为自己增加一个200点生命值的护盾（只可触发1次），并增加30点攻击力",
-				"tp_cost":0,
+				"tp_cost":30,
 				"trigger": TRIGGER_ME,
 				"passive":[],
 

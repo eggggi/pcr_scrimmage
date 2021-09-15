@@ -16,21 +16,20 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 '''
 
-from json.encoder import py_encode_basestring_ascii
 from typing import Dict, List
 import os
 import asyncio
 import math
 import random
 import re
-
+ 
 from  PIL  import   Image, ImageFont, ImageDraw
 from hoshino.typing import CQEvent
 from hoshino import R, Service, priv, log
 from hoshino.modules.priconne import chara
 
 from .attr import Attr, AttrTextChange
-from .buff import BuffEffectType, BuffTriggerType, Buff, BuffType
+from .buff import BuffEffectType, BuffTriggerType, Buff
 from .runway_case import (CASE_NONE, CASE_ATTACK, CASE_DEFENSIVE, CASE_HEALTH, 
 						  CASE_MOVE, CASE_TP, RUNWAY_CASE)
 from .role import (EFFECT_BUFF, ROLE, 
@@ -236,6 +235,7 @@ class Role:
 		self.attrChange(Attr.NOW_HEALTH, num)
 		return num
 
+	#添加buff
 	def addBuff(self, buff_info):
 		buffType = buff_info[0]
 		trigger_type = Buff[buffType]['trigger_type']
@@ -243,6 +243,7 @@ class Role:
 		if trigger_type not in self.buff:self.buff[trigger_type] = {}
 		if effect_type not in self.buff[trigger_type]:self.buff[trigger_type][effect_type] = {}
 		self.buff[trigger_type][effect_type][buffType] = [buff_info[1], buff_info[2]]
+	#buff触发器
 	def buffTrigger(self, trigger_type, num = 0):
 		if trigger_type in self.buff:
 			for effect_type, buff_infos in self.buff[trigger_type].items():
@@ -250,6 +251,7 @@ class Role:
 					num = self.buffEffect(trigger_type, effect_type, buff_type, info, num)
 					if len(buff_infos) == 0 : break
 		return num
+	#buff效果生效
 	def buffEffect(self, trigger_type, effect_type, buff_type, info, num):
 		if effect_type == BuffEffectType.Attr:
 			attr_type = Buff[buff_type]['attr_type']
