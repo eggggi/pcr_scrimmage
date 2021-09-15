@@ -1,4 +1,4 @@
-"""
+'''
 <A little game base on hoshino_bot, gameplay like RichMan>
 Copyright (C) <2021/06/11>  <eggggi>
 
@@ -14,50 +14,31 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
-"""
+'''
 
+from json.encoder import py_encode_basestring_ascii
 from typing import Dict, List
 import os
-import asyncio  # 异步模块
+import asyncio
 import math
 import random
 import re
 
-from PIL import Image, ImageFont, ImageDraw
+from  PIL  import   Image, ImageFont, ImageDraw
 from hoshino.typing import CQEvent
 from hoshino import R, Service, priv, log
 from hoshino.modules.priconne import chara
 
-from .role import (
-					ROLE,    # 角色字典
-					EFFECT_DEFENSIVE,    # 防御改变,   正数为增加，负数为减少  number
-					EFFECT_ATTACK,       # 攻击力改变, 正数为增加，负数为减少  number
-					EFFECT_DISTANCE,     # 距离改变,   正数为增加，负数为减少  number
-					EFFECT_HEALTH,       # 生命值改变, 正数为回血，负数为造成伤害   tuple元组 (数值，加成比例, 是否是真实伤害)
-					EFFECT_TP,           # TP 改变,   正数为增加，负数为减少  number
-					EFFECT_MOVE,         # 移动, 正数为前进负数为后退（触发跑道事件）	number
-					EFFECT_MOVE_GOAL,    # 向目标移动（一个技能有多个效果且包括向目标移动，向目标移动效果必须最先触发） tuple元组(移动距离，是否无视攻击范围)
-					EFFECT_OUT_TP,       # 令目标出局时tp变动    number
-					EFFECT_OUT_TURN,     # 令目标出局时锁定回合    number（锁定回合：不会切换到下一个玩家，当前玩家继续丢色子和放技能）
-					EFFECT_IGNORE_DIST,  # 无视距离效果，参数填啥都行，不会用到    [PS: 这个效果必须放在被动（不触发跑道事件）]
-					EFFECT_AOE,          #范围效果			number (半径范围)
-					TRIGGER_ME,          # 只对自己有效
-					TRIGGER_ALL_EXCEPT_ME,   # 对所有人有效(除了自己)
-					TRIGGER_ALL,         # 对所有人有效(包括自己)
-					TRIGGER_SELECT,      # 选择目标
-					TRIGGER_NEAR,        # 离自己最近的目标
-				   )
-from .runway_case import (
-							CASE_NONE,      # 0: 占个空位，代表不触发事件
-							CASE_HEALTH,    # 1: 生命值事件
-							CASE_DEFENSIVE, # 2: 防御力事件
-							CASE_ATTACK,    # 3: 攻击力事件
-							CASE_TP,        # 4: tp 值事件
-							CASE_MOVE,      # 移动位置事件
-							RUNWAY_CASE     # 事件列表字典 [{},{},...]
-						  )
+from .attr import Attr, AttrTextChange
+from .buff import BuffEffectType, BuffTriggerType, Buff, BuffType
+from .runway_case import (CASE_NONE, CASE_ATTACK, CASE_DEFENSIVE, CASE_HEALTH, 
+						  CASE_MOVE, CASE_TP, RUNWAY_CASE)
+from .role import (EFFECT_BUFF, ROLE, 
+				   EFFECT_HURT, EFFECT_ATTR_CHANGE, EFFECT_MOVE, EFFECT_MOVE_GOAL, EFFECT_LIFESTEAL,
+				   EFFECT_OUT_TP, EFFECT_OUT_TURN, EFFECT_IGNORE_DIST, EFFECT_AOE, EFFECT_ELIMINATE,
+				   TRIGGER_ME, TRIGGER_ALL_EXCEPT_ME, TRIGGER_ALL, TRIGGER_SELECT, TRIGGER_SELECT_EXCEPT_ME, TRIGGER_NEAR)
 
-# 模块名为 pcr_scrimmage, 功能默认启用, 默认在功能列表(lssv)中可见
+
 sv = Service(	'pcr_scrimmage',
 				manage_priv=priv.ADMIN,
 				enable_on_default=True,
@@ -65,52 +46,30 @@ sv = Service(	'pcr_scrimmage',
 				bundle='pcr娱乐',
 				help_='[大乱斗帮助] 击剑')
 
-FILE_PATH = os.path.dirname(__file__)       # 定义当前文件(pcr_scrimmage.py)路径
-IMAGE_PATH = R.img('pcr_scrimmage').path    # 获取 PCR 大乱斗资源文件存储根目录
-logger = log.new_logger('pcr_scrimmage')
+FILE_PATH = os.path.dirname(__file__)
 
-# 如果在 hoshino 的 res 目录下没有 pcr_scrimmage 路径则新建该目录
+IMAGE_PATH = R.img('pcr_scrimmage').path
+logger = log.new_logger('pcr_scrimmage')
 if not os.path.exists(IMAGE_PATH):
 	os.mkdir(IMAGE_PATH)
 	logger.info('create folder succeed')
-
 IMAGE_PATH = 'pcr_scrimmage'
 
-
-# 获取成员及其卡片字典
-async def get_user_card_dict(bot, group_id) -> dict:
-	"""获取成员及其卡片字典
-	"""
-	mlist = await bot.get_group_member_list(group_id=group_id)  # 根据群号获取成员列表
+async def get_user_card_dict(bot, group_id):
+	mlist = await bot.get_group_member_list(group_id=group_id)
 	d = {}
 	for m in mlist:
-		d[m['user_id']] = m['card'] if m['card'] != '' else m['nickname']
+		d[m['user_id']] = m['card'] if m['card']!='' else m['nickname']
 	return d
-
-
-# 返回 uid
 def uid2card(uid, user_card_dict):
-	"""返回 uid
-	存疑, 这句没太看懂;
-	为什么 uid 不在字典键里却可以获取到 user_card_dict[uid] ?
-	
-	A:这是py的特殊语法。如果 uid 不在 user_card_dict 里，则返回 str(uid) ，否则返回 user_card_dict[uid]
-	"""
 	return str(uid) if uid not in user_card_dict.keys() else user_card_dict[uid]
 
-
-# 防御力计算机制
+#防御力计算机制。
+#100点防御力内，每1点防御力增加0.1%伤害减免；
+#100点防御力后，每1点防御力增加0.05%伤害减免；
+#最高有效防御力为1000
+#（防御力可无限提升，但最高只能获得55%伤害减免）
 def hurt_defensive_calculate(hurt, defensive):
-	"""防御力计算机制
-
-	100点防御力内，每1点防御力增加0.1%伤害减免；
-
-	100点防御力后，每1点防御力增加0.05%伤害减免；
-
-	最高有效防御力为1000（防御力可无限提升，但最高只能获得55%伤害减免）
-
-	:return: 减伤后的伤害值
-	"""
 	percent = 0.0
 	if defensive <= 100:
 		percent = defensive * 0.001
@@ -123,28 +82,28 @@ def hurt_defensive_calculate(hurt, defensive):
 
 
 ###显示偏移###	（可以改）
-OFFSET_X = 45  # 整体右移
-OFFSET_Y = 50  # 整体下移
+OFFSET_X = 45		#整体右移
+OFFSET_Y = 50		#整体下移
 
 ###线宽###		（别改）
-RUNWAY_LINE_WDITH = 4   # 跑道线宽
-STATU_LINE_WDITH = 2    # 状态条线宽 血条tp条
+RUNWAY_LINE_WDITH = 4		#跑道线宽
+STATU_LINE_WDITH = 2	#状态条线宽 血条tp条
 
 ###常用颜色###
-COLOR_BLACK = (0, 0, 0)
-COLOR_WRITE = (255, 255, 255)
-COLOR_RED = (255, 0, 0)
-COLOR_GREEN = (0, 255, 0)
-COLOR_BLUE = (0, 0, 255)
-COLOR_CAM_GREEN = (30, 230, 100)    # 血条填充色
-COLOR_CAM_BLUE = (30, 144, 255)     # tp条填充色
+COLOR_BLACK = (0,0,0)
+COLOR_WRITE = (255,255,255)
+COLOR_RED = (255,0,0)
+COLOR_GREEN = (0,255,0)
+COLOR_BLUE = (0,0,255)
+COLOR_CAM_GREEN = (30,230,100)	#血条填充色
+COLOR_CAM_BLUE = (30,144,255)	#tp条填充色
 
 ###当前房间状态###
-NOW_STATU_WAIT = 0          # 等待
-NOW_STATU_SELECT_ROLE = 1   # 选取角色
-NOW_STATU_OPEN = 2          # 大乱斗进行中
-NOW_STATU_END = 3           # 大乱斗结束
-NOW_STATU_WIN = 4           # 获胜结算
+NOW_STATU_WAIT = 0
+NOW_STATU_SELECT_ROLE = 1
+NOW_STATU_OPEN = 2
+NOW_STATU_END = 3
+NOW_STATU_WIN = 4
 
 ###当前玩家处于什么阶段###
 NOW_STAGE_WAIT	= 0 #等待
@@ -162,163 +121,175 @@ HIT_DOWN_TP = 20	#击倒获得的tp
 
 RET_ERROR = -1	#错误
 RET_NORMAL = 0
-RET_SUCCESS = 1     # 成功
+RET_SCUESS = 1	#成功
 
-
-# 角色
+#角色
 class Role:
 	def __init__(self, user_id) -> None:
-		"""初始化大乱斗玩家及其角色(空模板)
-		"""
-		self.user_id = user_id  # 玩家的qq号
-		self.role_id = 0        # pcr角色编号
-		self.role_icon = None   # 角色头像
-		self.player_num = 0     # 玩家在这个房间的编号
-		self.room_obj = None    # 房间对象
+		self.user_id = user_id	#玩家的qq号
 
-		self.name = ''          # 角色名
-		self.max_health = 0     # 最大生命值
-		self.distance = 0       # 攻击距离
-		self.attack = 0         # 攻击力
-		self.defensive = 0      # 防御力
-		self.tp = 0             # tp 值（能量值）
+		self.role_id = 0		#pcr角色编号
+		self.name = ''			#角色名
+		self.role_icon = None	#角色头像
+		self.player_num = 0		#玩家在这个房间的编号
+		self.room_obj = None	#房间对象
 
-		self.active_skills = []     # 技能列表
-		self.passive_skills = []    # 被动列表
+		self.attr = {}			#角色属性列表
+		'''
+		{
+			Attr.xx = 数值,
+			Attr.xx = 数值,
+		}
+		'''
+		self.buff = {}			#角色buff列表
+		'''self.buff 的结构
+		{
+			BuffTriggerType.xx = {
+				BuffEffectType.xx = {
+					BuffType = [数值, 次数],
+					BuffType = [数值, 次数]
+				},
+				BuffEffectType.xx = {
+					BuffType = [数值, 次数]
+				}
+			},
+			BuffTriggerType.xx = {
+				BuffEffectType.xx = {
+					BuffType = [数值, 次数]
+				}
+			},
+		}
+		'''
 
-		self.now_health = 0     # 当前生命值
-		self.now_location = 0   # 当前位置
-		self.now_stage = NOW_STAGE_WAIT  # 当前处于什么阶段
+		self.now_location = 0	#当前位置
+		self.now_stage = NOW_STAGE_WAIT		#当前处于什么阶段
 
+		self.active_skills = []			#技能列表
+		self.passive_skills = []		#被动列表
+
+	#选择角色后对数据的初始化
 	def initData(self, role_id, role_info, room_obj):
-		"""选择角色后对数据的初始化
-		"""
-		role_data = ROLE[role_id]   # 从角色字典中获取角色数据
-		if role_data:
+		role_data = ROLE[role_id]
+		if role_data :
 			self.role_id = role_id
-			self.role_icon = role_info.icon.open()
-			self.room_obj = room_obj
 
 			self.name = role_data['name']
-			self.max_health = role_data['health']
-			self.distance = role_data['distance']
-			self.attack = role_data['attack']
-			self.defensive = role_data['defensive']
-			self.tp = role_data['tp']
+			self.role_icon = role_info.icon.open()
+			self.room_obj:PCRScrimmage = room_obj
+
+			self.attr[Attr.MAX_HEALTH] = role_data['health']
+			self.attr[Attr.NOW_HEALTH] = self.attr[Attr.MAX_HEALTH]
+			self.attr[Attr.DISTANCE] = role_data['distance']
+			self.attr[Attr.ATTACK] = role_data['attack']
+			self.attr[Attr.DEFENSIVE] = role_data['defensive']
+			self.attr[Attr.TP] = role_data['tp']
 
 			self.active_skills = role_data['active_skills']
 			self.passive_skills = role_data['passive_skills']
 
-			self.now_health = self.max_health
+	
+	#属性数值改变的统一处理
+	def attrChange(self, attr_type, num):
+		if self.now_stage == NOW_STAGE_OUT: return
 
-	def healthChange(self, num):
-		"""生命值及其相关变动处理
-		生命值变动, 受伤回复 TP, 生命值归零出局
-		"""
-		# 当前玩家处于出局状态则跳过, 不处理
-		if self.now_stage == NOW_STAGE_OUT:
-			return
-		# 如果生命值减少，则按百分比回复tp(每损失 2% 的最大生命值回复 1 点 TP)
-		if num < 0:
-			hurt_tp = math.floor(abs(num) / self.max_health * 100 / 2)
-			self.tpChange(hurt_tp)
-		self.now_health += num  # 当前生命值变动
-		# 当前生命值不会超过最大生命值
-		if self.now_health > self.max_health:
-			self.now_health = self.max_health
-		# 如果当前生命值 <0 则当前生命值归零并调用出局处理
-		elif self.now_health <= 0:
-			self.now_health = 0
-			self.room_obj.outDispose(self)
+		#属性数值改变前的处理
+		if attr_type == Attr.NOW_HEALTH and num < 0:
+			#如果生命值减少，则按百分比回复tp
+			hurt_tp = math.floor(abs(num) / self.attr[Attr.MAX_HEALTH] * 100 / 2)
+			self.attrChange(Attr.TP, hurt_tp)
 
-	def distanceChange(self, num):
-		"""攻击距离变动
-		"""
-		self.distance += num    # 攻击距离变动
-		# 攻击距离不会大于最大攻击距离
-		if self.distance > MAX_DIST:
-			self.distance = MAX_DIST
-		# 攻击距离不会小于 0
-		elif self.distance < 0:
-			self.distance = 0
+		self.attr[attr_type] += num
 
-	def attackChange(self, num):
-		"""攻击力变动
-		"""
-		# 当前玩家处于出局状态则跳过, 不处理
-		if self.now_stage == NOW_STAGE_OUT:
-			return
-		self.attack += num
-		# 攻击力不会 < 0
-		if self.attack < 0:
-			self.attack = 0
+		#属性数值改变后的处理
+		if attr_type == Attr.NOW_HEALTH and self.attr[Attr.NOW_HEALTH] > self.attr[Attr.MAX_HEALTH]:
+			#当前生命值不能超过最大生命值
+			self.attr[Attr.NOW_HEALTH] = self.attr[Attr.MAX_HEALTH]
+		if attr_type == Attr.DISTANCE and self.attr[Attr.DISTANCE] > MAX_DIST:
+			#不能超过最大攻击距离
+			self.attr[Attr.DISTANCE] = MAX_DIST
+		if attr_type == Attr.TP and self.attr[Attr.TP] > MAX_TP:
+			#不能超过最大tp
+			self.attr[Attr.TP] = MAX_TP
 
-	def defensiveChange(self, num):
-		"""防御力变动
-		要注意的是这里的防御力是可以无限叠加的, 但实际上这里只是个数值而已
-		防御力的生效是写在受伤函数 hurt_defensive_calculate(hurt, defensive) 里的
-		在受伤函数中防御力超过 1000 都按照 1000 点进行计算
-		"""
-		# 当前玩家处于出局状态则跳过, 不处理
-		if self.now_stage == NOW_STAGE_OUT:
-			return
-		self.defensive += num
-		# 防御力不会低于 0
-		if self.defensive < 0:
-			self.defensive = 0
-
-	def tpChange(self, num):
-		""""TP 变动
-		"""
-		# 当前玩家处于出局状态则跳过, 不处理
-		if self.now_stage == NOW_STAGE_OUT:
-			return
-		self.tp += num
-		# TP 值不会超过上限
-		if self.tp > MAX_TP:
-			self.tp = MAX_TP
-		# TP 值不会小于 0
-		elif self.tp < 0:
-			self.tp = 0
-
+		if self.attr[attr_type] <= 0:
+			self.attr[attr_type] = 0
+			if attr_type == Attr.NOW_HEALTH:
+				#如果是生命值降为0，则调用出局接口
+				self.room_obj.outDispose(self)
+	#位置改变
 	def locationChange(self, num, runway):
-		"""位置变动
-
-		"""
-		# 当前玩家处于出局状态则跳过, 不处理
-		if self.now_stage == NOW_STAGE_OUT:
-			return
-		# 将玩家从当前位置列表中清除
+		if self.now_stage == NOW_STAGE_OUT: return
 		runway[self.now_location]["players"].remove(self.user_id)
-		self.now_location += num    # 当前位置变动
-		# 当前位置基于跑到的最大长度循环变动
+		self.now_location += num
 		if self.now_location >= len(runway):
 			self.now_location -= len(runway)
 		elif self.now_location < 0:
 			self.now_location = len(runway) + self.now_location
-		# 在跑到相应位置更新玩家的新位置
 		runway[self.now_location]["players"].append(self.user_id)
-
+	#状态改变
 	def stageChange(self, stage):
-		"""更新玩家当前所处的阶段(等待, 丢色子, 释放技能, 出局)
-		"""
 		self.now_stage = stage
 
+	#被攻击
+	def beHurt(self, num):
+		num = self.buffTrigger(BuffTriggerType.Hurt, num)
+		self.attrChange(Attr.NOW_HEALTH, num)
+		return num
+
+	def addBuff(self, buff_info):
+		buffType = buff_info[0]
+		trigger_type = Buff[buffType]['trigger_type']
+		effect_type = Buff[buffType]['effect_type']
+		if trigger_type not in self.buff:self.buff[trigger_type] = {}
+		if effect_type not in self.buff[trigger_type]:self.buff[trigger_type][effect_type] = {}
+		self.buff[trigger_type][effect_type][buffType] = [buff_info[1], buff_info[2]]
+	def buffTrigger(self, trigger_type, num = 0):
+		if trigger_type in self.buff:
+			for effect_type, buff_infos in self.buff[trigger_type].items():
+				for buff_type, info in buff_infos.items():
+					num = self.buffEffect(trigger_type, effect_type, buff_type, info, num)
+					if len(buff_infos) == 0 : break
+		return num
+	def buffEffect(self, trigger_type, effect_type, buff_type, info, num):
+		if effect_type == BuffEffectType.Attr:
+			attr_type = Buff[buff_type]['attr_type']
+			self.attrChange(attr_type, info[0])
+		elif effect_type == BuffEffectType.Shield:
+			num += info[0]
+			if num > 0:num = 0
+		
+		info[1] -= 1
+		if info[1] <= 0 : 
+			del self.buff[trigger_type][effect_type][buff_type]
+		else:
+			self.buff[trigger_type][effect_type][buff_type][1] = info[1]
+		return num
+
+
+	#检查当前状态
 	def checkStatu(self, scrimmage):
-		"""检查当前状态
-		"""
-		msg = [f"玩家：{uid2card(self.user_id, scrimmage.user_card_dict)}",
-			   f"角色：{self.name}",
-			   f"生命值：{self.now_health}/{self.max_health}",
-			   f"TP：{self.tp}",
-			   f"攻击距离：{self.distance}",
-			   f"攻击力：{self.attack}",
-			   f"防御力：{self.defensive}",
-			   f'位置：{self.now_location}']
+		msg = [
+			f"玩家：{uid2card(self.user_id, scrimmage.user_card_dict)}",
+			f"角色：{self.name}",
+			f"生命值：{self.attr[Attr.NOW_HEALTH]}/{self.attr[Attr.MAX_HEALTH]}",
+			f"TP：{self.attr[Attr.TP]}",
+			f"攻击距离：{self.attr[Attr.DISTANCE]}",
+			f"攻击力：{self.attr[Attr.ATTACK]}",
+			f"防御力：{self.attr[Attr.DEFENSIVE]}",
+			f'位置：{self.now_location}'
+		]
+		if len(self.buff) != 0:
+			msg.append('\nbuff效果列表:')
+			for trigger_type, buff_effect_infos in self.buff.items():
+				for effect_type, buff_infos in buff_effect_infos.items():
+					for buff_type, info in buff_infos.items():
+						buff_text:str = Buff[buff_type]['text']
+						buff_text = buff_text.format(info[0], info[1])
+						msg.append(f'{Buff[buff_type]["name"]}:{buff_text}')
 		return msg
 
 
-# 公主连结大乱斗
+#公主连结大乱斗
 class PCRScrimmage:
 	#初始化
 	def __init__(self, gid, manager, room_master, across_range = 10, vertical_range = 10, grid_size = 50) -> None:
@@ -413,7 +384,7 @@ class PCRScrimmage:
 			#显示玩家名字
 			self.playerInfoText(offset_x, offset_y, 12,text = f'name：{uid2card(player.user_id, self.user_card_dict)}')
 			#攻击距离
-			self.playerInfoText(offset_x, offset_y, 28,text = f'dist   ：{player.distance}')
+			self.playerInfoText(offset_x, offset_y, 28,text = f'dist   ：{player.attr[Attr.DISTANCE]}')
 
 			num += 1
 		
@@ -478,6 +449,7 @@ class PCRScrimmage:
 		player.stageChange(NOW_STAGE_OUT)
 		self.rank[len(self.now_playing_players)] = player.user_id
 		self.now_playing_players.remove(player.user_id)
+		player.buff.clear()
 		if len(self.now_playing_players) == 1:
 			self.rank[1] = self.now_playing_players[0]
 			self.now_statu = NOW_STATU_WIN
@@ -489,15 +461,19 @@ class PCRScrimmage:
 		
 		player.locationChange(step, self.runway)
 
-		for iter_player_id in self.player_list:	#每丢1次色子，所有玩家增加10点tp
-			self.getPlayerObj(iter_player_id).tpChange(ONE_ROUND_TP)
+		for iter_player_id in self.now_playing_players:	#每丢1次色子为一个回合
+			self.getPlayerObj(iter_player_id).attrChange(Attr.TP, ONE_ROUND_TP)
+			self.getPlayerObj(iter_player_id).buffTrigger(BuffTriggerType.Normal)
+			self.getPlayerObj(iter_player_id).buffTrigger(BuffTriggerType.Turn)
+
 		self.dice_num += 1
+		#每丢(场上玩家数量)次色子，所有玩家增加攻击距离和攻击力
 		if self.dice_num % (len(self.now_playing_players) + 1) == 0:
-			for iter_player_id in self.now_playing_players:	#每丢x次色子，所有玩家增加攻击距离和攻击力
-				self.getPlayerObj(iter_player_id).distanceChange(ROUND_DISTANCE)
-				self.getPlayerObj(iter_player_id).attackChange(ROUND_ATTACK)
+			for iter_player_id in self.now_playing_players:
+				self.getPlayerObj(iter_player_id).attrChange(Attr.DISTANCE, ROUND_DISTANCE)
+				self.getPlayerObj(iter_player_id).attrChange(Attr.ATTACK, ROUND_ATTACK)
 			self.dice_num = 1
-	
+
 		await self.caseTrigger(player, bot, ev)
 
 	#触发跑道事件
@@ -509,19 +485,19 @@ class PCRScrimmage:
 		elif case_num == CASE_HEALTH:
 			numRange = RUNWAY_CASE[CASE_HEALTH]["range"]
 			num = random.choice(range(numRange[0],numRange[1]))
-			player.healthChange(num)
+			player.attrChange(Attr.NOW_HEALTH, num)
 		elif case_num == CASE_DEFENSIVE:
 			numRange = RUNWAY_CASE[CASE_DEFENSIVE]["range"]
 			num = random.choice(range(numRange[0],numRange[1]))
-			player.defensiveChange(num)
+			player.attrChange(Attr.DEFENSIVE, num)
 		elif case_num == CASE_ATTACK:
 			numRange = RUNWAY_CASE[CASE_ATTACK]["range"]
 			num = random.choice(range(numRange[0],numRange[1]))
-			player.attackChange(num)
+			player.attrChange(Attr.ATTACK, num)
 		elif case_num == CASE_TP:
 			numRange = RUNWAY_CASE[CASE_TP]["range"]
 			num = random.choice(range(numRange[0],numRange[1]))
-			player.tpChange(num)
+			player.attrChange(Attr.TP, num)
 		elif case_num == CASE_MOVE:
 			numRange = RUNWAY_CASE[CASE_MOVE]["range"]
 			num = random.choice(range(numRange[0],numRange[1]))
@@ -572,12 +548,12 @@ class PCRScrimmage:
 			real_skill_id = skill_id - 1	#实际技能id
 			skill = use_player_obj.active_skills[real_skill_id]
 			skill_tp_cost = skill["tp_cost"]			#tp消耗
-			if skill_tp_cost > use_player_obj.tp:		#检查tp是否足够
+			if skill_tp_cost > use_player_obj.attr[Attr.TP]:		#检查tp是否足够
 				await bot.send(ev, 'tp不足，无法使用这个技能')
 				return RET_ERROR
-
-			#先扣除tp	
-			use_player_obj.tpChange(-skill_tp_cost)
+			
+			#先扣除tp
+			use_player_obj.attrChange(Attr.TP, -skill_tp_cost)
 			
 			use_player_name = uid2card(use_player_obj.user_id, self.user_card_dict)
 			use_skill_nale = use_player_obj.active_skills[real_skill_id]["name"]
@@ -588,13 +564,13 @@ class PCRScrimmage:
 			if ret == RET_ERROR:
 				await bot.send(ev, msg)
 				#技能释放失败，返还tp
-				use_player_obj.tpChange(skill_tp_cost)
+				use_player_obj.attrChange(Attr.TP, skill_tp_cost)
 				return ret
 			await bot.send(ev, '\n'.join(back_msg))
 			
 		self.turnChange()	#回合切换
 		self.refreshNowImageStatu()	#刷新当前显示状态
-		return RET_SUCCESS
+		return RET_SCUESS
 	
 	#技能释放对象选择
 	def skillTrigger(self, use_skill_player:Role, goal_player_id, skill_id, is_passive, back_msg):
@@ -606,15 +582,15 @@ class PCRScrimmage:
 		skill_trigger = skill["trigger"]						#技能的触发对象
 		skill_effect = skill["effect"]							#技能效果
 		
-
-		if skill_trigger == TRIGGER_SELECT:				#选择触发对象
+		#选择触发对象
+		if skill_trigger == TRIGGER_SELECT or skill_trigger == TRIGGER_SELECT_EXCEPT_ME:
 			if goal_player_id > 0:
 				goal_player_obj = self.getPlayerObj(goal_player_id)
 				if not goal_player_obj:
 					return RET_ERROR, '目标不在房间里'
 				if goal_player_obj.now_stage == NOW_STAGE_OUT:
 					return RET_ERROR, '目标已出局'
-				if goal_player_obj == use_skill_player:
+				if skill_trigger == TRIGGER_SELECT_EXCEPT_ME and goal_player_obj == use_skill_player:
 					return RET_ERROR, '不能选择自己'
 
 				#检查被动技能里是否带有无视距离的技能效果
@@ -629,7 +605,7 @@ class PCRScrimmage:
 				
 				#计算攻击距离
 				dist = self.getTwoPlayerDist(use_skill_player, goal_player_obj)
-				if (dist > use_skill_player.distance and not disregard_dist and not is_passive):
+				if (dist > use_skill_player.attr[Attr.DISTANCE] and not disregard_dist and not is_passive):
 					return RET_ERROR, '攻击距离不够'
 				
 				#先触发被动技能
@@ -669,7 +645,7 @@ class PCRScrimmage:
 		else:
 			return RET_ERROR, '技能配置出错'
 
-		return RET_SUCCESS, msg
+		return RET_SCUESS, msg
 
 	#技能效果生效
 	def skillEffect(self, use_skill_player:Role, goal_player:Role, skill_effect_base, back_msg:List):
@@ -704,7 +680,7 @@ class PCRScrimmage:
 			distance = use_skill_player.now_location - goal_player.now_location
 			half_circle = len(self.runway) / 2
 			dist = self.getTwoPlayerDist(use_skill_player, goal_player)
-			if not ignore_dist and dist > use_skill_player.distance + num : return RET_ERROR, '攻击距离不够'
+			if not ignore_dist and dist > use_skill_player.attr[Attr.DISTANCE] + num : return RET_ERROR, '攻击距离不够'
 
 			if distance > 0:
 				if distance > half_circle:
@@ -718,42 +694,6 @@ class PCRScrimmage:
 					use_skill_player.locationChange(-num, self.runway)
 			back_msg.append(f'{use_player_name}往离{goal_player_name}较近的方向移动了{num}步')
 
-		#攻击力改变
-		if EFFECT_ATTACK in skill_effect:
-			num = skill_effect[EFFECT_ATTACK]
-			goal_player.attackChange(num)
-			if num < 0:
-				back_msg.append(f'{goal_player_name}降低了{abs(num)}点攻击力')
-			else:
-				back_msg.append(f'{goal_player_name}增加了{num}点攻击力')
-
-		#防御力改变
-		if EFFECT_DEFENSIVE in skill_effect:
-			num = skill_effect[EFFECT_DEFENSIVE]
-			goal_player.defensiveChange(num)
-			if num < 0:
-				back_msg.append(f'{goal_player_name}降低了{abs(num)}点防御力')
-			else:
-				back_msg.append(f'{goal_player_name}增加了{num}点防御力')
-
-		#攻击距离改变
-		if EFFECT_DISTANCE in skill_effect:
-			num = skill_effect[EFFECT_DISTANCE]
-			goal_player.distanceChange(num)
-			if num < 0:
-				back_msg.append(f'{goal_player_name}降低了{abs(num)}点攻击距离')
-			else:
-				back_msg.append(f'{goal_player_name}增加了{num}点攻击距离')
-
-		#tp值改变
-		if EFFECT_TP in skill_effect:
-			num = skill_effect[EFFECT_TP]
-			goal_player.tpChange(num)
-			if num < 0:
-				back_msg.append(f'{goal_player_name}降低了{abs(num)}点TP')
-			else:
-				back_msg.append(f'{goal_player_name}增加了{num}点TP')
-
 		#位置改变
 		if EFFECT_MOVE in skill_effect:
 			num = skill_effect[EFFECT_MOVE]
@@ -763,38 +703,48 @@ class PCRScrimmage:
 			else:
 				back_msg.append(f'{goal_player_name}前进了{num}步')
 
-		#生命值改变
-		if EFFECT_HEALTH in skill_effect:
-			num = skill_effect[EFFECT_HEALTH][0]		#基础数值
-			addition = skill_effect[EFFECT_HEALTH][1]	#加成比例
-			use_player_atk = use_skill_player.attack	#自身攻击力
-			if num <= 0 :#扣血
-				is_real = skill_effect[EFFECT_HEALTH][2]	#是否是真实伤害
-				goal_player_def = goal_player.defensive		#目标防御力
-				num = abs(num) + use_player_atk * addition	#计算加成后的数值
-				#如果是真实伤害则不计算目标的防御
-				if not is_real:
-					num = hurt_defensive_calculate(num, goal_player_def)	#计算目标防御力后的数值
-				num = math.floor(num)					#小数数值向下取整
-				num = 0 - num							#变回负数，代表扣血
-			else :#回血
-				num = num + use_player_atk * addition	#计算加成后的数值
-			goal_player.healthChange(num)
+		#属性改变
+		if EFFECT_ATTR_CHANGE in skill_effect:
+			attr_type	  = skill_effect[EFFECT_ATTR_CHANGE][0]	#属性类型
+			num 		  = skill_effect[EFFECT_ATTR_CHANGE][1]	#基础数值
+			addition_type = skill_effect[EFFECT_ATTR_CHANGE][2]	#加成类型
+			addition_prop = skill_effect[EFFECT_ATTR_CHANGE][3]	#加成比例
+			text = AttrTextChange(attr_type)
+
+			if addition_type != 0 and addition_prop != 0 :
+				num = num + goal_player.attr[addition_type] * addition_prop	#计算加成后的数值
+			goal_player.attrChange(attr_type, num)
 
 			if num < 0:
-				back_msg.append(f'{goal_player_name}受到了{abs(num)}点伤害')
-				#击倒回复tp
+				back_msg.append(f'{goal_player_name}降低了{abs(num)}点{text}')
 				if goal_player.now_stage == NOW_STAGE_OUT:
-					use_skill_player.tpChange(HIT_DOWN_TP)	
 					back_msg.append(f'[CQ:at,qq={goal_player.user_id}]出局')
 			else:
-				back_msg.append(f'{goal_player_name}增加了{num}点生命值')
+				back_msg.append(f'{goal_player_name}增加了{num}点{text}')
+		
+		#buff效果
+		if EFFECT_BUFF in skill_effect:
+			buff_info = skill_effect[EFFECT_BUFF]
+			buff_name = Buff[buff_info[0]]['name']
+			buff_text:str = Buff[buff_info[0]]['text']
+			buff_text = buff_text.format(buff_info[1], buff_info[2])
+			goal_player.addBuff(buff_info)
+			back_msg.append(f'{goal_player_name}获得buff《{buff_name}》，{buff_text}')
+		
+		#造成伤害
+		if EFFECT_HURT in skill_effect:
+			num = self.hurtCalculate(skill_effect, use_skill_player, goal_player, back_msg)
+			num = goal_player.beHurt(num)
+			back_msg.append(f'{goal_player_name}受到了{abs(num)}点伤害')
+			if goal_player.now_stage == NOW_STAGE_OUT:
+				use_skill_player.attrChange(Attr.TP, HIT_DOWN_TP)#击倒回复tp
+				back_msg.append(f'[CQ:at,qq={goal_player.user_id}]出局')
 
 		#效果击倒tp
 		if EFFECT_OUT_TP in skill_effect:
 			if goal_player.now_stage == NOW_STAGE_OUT:
 				num = skill_effect[EFFECT_OUT_TP]
-				use_skill_player.tpChange(num)
+				use_skill_player.attrChange(Attr.TP, num)
 				if num < 0:
 					back_msg.append(f'{goal_player_name}被击倒，{use_player_name}降低了{abs(num)}点TP')
 				else:
@@ -809,7 +759,41 @@ class PCRScrimmage:
 
 		if len(back_msg) == 0:
 			back_msg.append('什么都没发生')
-		return RET_SUCCESS, ''
+		return RET_SCUESS, ''
+
+	#伤害计算独立出来处理
+	def hurtCalculate(self, skill_effect, use_skill_player:Role, goal_player:Role, back_msg:List):
+		num 		  = skill_effect[EFFECT_HURT][0]					#基础数值
+		addition_type = skill_effect[EFFECT_HURT][1]					#加成类型
+		addition_goal = (skill_effect[EFFECT_HURT][2] == 0 				#（三目）
+							and use_skill_player or goal_player) 		#加成的数值对象：0自己 1目标
+		addition_prop = skill_effect[EFFECT_HURT][3]					#加成比例
+		is_real 	  = skill_effect[EFFECT_HURT][4]					#是否是真实伤害
+
+		if addition_type != 0 and addition_prop != 0 :
+			num = num + addition_goal.attr[addition_type] * addition_prop	#计算加成后的数值
+		if not is_real:#如果是真实伤害则不计算目标的防御
+			goal_player_def = goal_player.attr[Attr.DEFENSIVE]		#目标防御力
+			num = hurt_defensive_calculate(num, goal_player_def)	#计算目标防御力后的数值
+
+
+		#斩杀效果
+		if EFFECT_ELIMINATE in skill_effect:
+			#cons_prop：目标已消耗的生命值比例; real_prop：真正的伤害比例
+			cons_prop = 1 - goal_player.attr[Attr.NOW_HEALTH] / goal_player.attr[Attr.MAX_HEALTH]
+			real_prop = cons_prop / skill_effect[EFFECT_ELIMINATE][0]
+			num += real_prop * 100 * skill_effect[EFFECT_ELIMINATE][1]
+		#生命偷取
+		if EFFECT_LIFESTEAL in skill_effect:
+			steal_prop = skill_effect[EFFECT_LIFESTEAL]
+			add = math.floor(num * steal_prop)
+			use_skill_player.attrChange(Attr.NOW_HEALTH, add)
+			back_msg.append(f'{uid2card(use_skill_player.user_id, self.user_card_dict)}增加了{add}点生命值')
+
+
+		num = math.floor(num)	#小数数值向下取整
+		num = 0 - num			#变回负数，代表扣血
+		return num
 
 
 	#阶段提醒，丢色子/放技能阶段
@@ -895,14 +879,14 @@ class PCRScrimmage:
 			elif num == 3 : offset_x, offset_y = 1, 1
 
 			player = self.getPlayerObj(player_id)
-			health_line_length = 96 * (player.now_health / player.max_health)
-			tp_line_length = 96 * (player.tp / MAX_TP)
+			health_line_length = 96 * (player.attr[Attr.NOW_HEALTH] / player.attr[Attr.MAX_HEALTH])
+			tp_line_length = 96 * (player.attr[Attr.TP] / MAX_TP)
 
 			self.statuLineFill(health_line_length, offset_x, offset_y, -16, COLOR_CAM_GREEN)	#血条填充
 			self.statuLineFill(tp_line_length, offset_x, offset_y, 1, COLOR_CAM_BLUE)			#tp条填充
-			self.roleStatuText(offset_x, offset_y, -23, text = str(player.now_health) )			#血条数值
-			self.roleStatuText(offset_x, offset_y, -5, text = str(player.tp))					#tp条数值
-			self.playerInfoText(offset_x, offset_y, 28,text = f'dist   ：{player.distance}')	#攻击距离
+			self.roleStatuText(offset_x, offset_y, -23, text = str(player.attr[Attr.NOW_HEALTH]) )			#血条数值
+			self.roleStatuText(offset_x, offset_y, -5, text = str(player.attr[Attr.TP]))					#tp条数值
+			self.playerInfoText(offset_x, offset_y, 28,text = f'dist   ：{player.attr[Attr.DISTANCE]}')		#攻击距离
 			self.playerInfoText(offset_x, offset_y, 12,text = f'name：{uid2card(player.user_id, self.user_card_dict)}')#玩家名字
 			
 			if self.now_turn == player.player_num:	#当前回合的玩家，头像框为绿色
@@ -940,35 +924,17 @@ class PCRScrimmage:
 				self.drawBox(100, 10,  self.grid_size * 2 + i * 200, self.grid_size * 4   + j * 190,      COLOR_BLACK,  STATU_LINE_WDITH)#TP框
 		#填充跑道事件文字
 		self.fillCaseText()
-		# 追逐方向绘制
-		width = (self.vertical_range_x + 2) * self.grid_size
-		height = (self.across_range_y + 2) * self.grid_size
-		offset = 20 # 直线相对图像边框偏移量
-		# 绘制折线段
-		self.draw.line([
-			(width-offset-self.grid_size, offset),
-			(width-offset, offset),
-			(width-offset, offset+self.grid_size)
-		], fill=COLOR_BLACK, width=RUNWAY_LINE_WDITH)
-		# 绘制箭头
-		offset_arrow_x = 5
-		offset_arrow_y = 10
-		self.draw.line([
-			(width-offset-offset_arrow_x, offset+self.grid_size-offset_arrow_y),
-			(width - offset, offset + self.grid_size),
-			(width-offset+offset_arrow_x, offset+self.grid_size-offset_arrow_y)
-		], fill=COLOR_BLACK, width=RUNWAY_LINE_WDITH)
 
 	#画盒子（画框）
 	def drawBox(self, length, width, offset_x, offset_y, color = COLOR_BLACK, line_width = RUNWAY_LINE_WDITH, is_now = False):
 		draw = self.draw 
 		if is_now : draw = self.now_draw
 		draw.line(( (OFFSET_X + offset_x, 			OFFSET_Y + offset_y),
-					(OFFSET_X + offset_x, 			OFFSET_Y + width + offset_y),
-					(OFFSET_X + length + offset_x,	OFFSET_Y + width + offset_y),
-					(OFFSET_X + length + offset_x,	OFFSET_Y + offset_y),
-					(OFFSET_X + offset_x, 			OFFSET_Y + offset_y) ),
-					fill = color, width = line_width )
+						 (OFFSET_X + offset_x, 			OFFSET_Y + width + offset_y),
+						 (OFFSET_X + length + offset_x, OFFSET_Y + width + offset_y),
+						 (OFFSET_X + length + offset_x, OFFSET_Y + offset_y),
+						 (OFFSET_X + offset_x, 			OFFSET_Y + offset_y) ),
+						 fill = color, width = line_width )
 	
 	#填充跑道事件文字
 	def fillCaseText(self):
@@ -1032,8 +998,7 @@ class PCRScrimmage:
 #管理器
 class manager:
 	def __init__(self):
-		# playing = {} 并且定义为一个 PCRScrimmage 对象组成的列表?
-		self.playing: List[PCRScrimmage] = {}
+		self.playing:List[PCRScrimmage] = {}
 
 	def is_playing(self, gid):
 		return gid in self.playing
@@ -1045,15 +1010,14 @@ class manager:
 		return self.playing[gid] if gid in self.playing else None
 
 
-mgr = manager() # 初始化管理器
+mgr = manager()
 WAIT_TIME = 3			#每x秒检查一次房间状态
 PROCESS_WAIT_TIME = 1	#避免发送太快增加的缓冲时间
 
 STAGE_WAIT_TIME = 30	#玩家阶段等待时间，超过这个时间判负。
 						#实际时间是 STAGE_WAIT_TIME * WAIT_TIME
 
-@sv.on_fullmatch('创建大乱斗')
-async def game_create(bot, ev: CQEvent):
+@sv.on_fullmatch('创建大乱斗')async def game_create(bot, ev: CQEvent):
 	gid, uid = ev.group_id, ev.user_id
 
 	if mgr.is_playing(gid):
@@ -1100,14 +1064,13 @@ async def game_create(bot, ev: CQEvent):
 		else:
 			await bot.send(ev, f'游戏结束')
 
-
 @sv.on_fullmatch('加入大乱斗')
 async def game_join(bot, ev: CQEvent):
 	gid, uid = ev.group_id, ev.user_id
 	scrimmage = mgr.get_game(gid)
-	if not scrimmage or scrimmage.now_statu != NOW_STATU_WAIT:
+	if not scrimmage  or scrimmage.now_statu != NOW_STATU_WAIT:
 		return
-	if uid in scrimmage.player_list:
+	if uid in scrimmage.player_list :
 		await bot.finish(ev, '您已经在准备房间里了', at_sender=True)
 	if scrimmage.getPlayerNum() >= MAX_PLAYER:
 		await bot.finish(ev, '人数已满，无法继续加入', at_sender=True)
@@ -1122,13 +1085,11 @@ async def game_join(bot, ev: CQEvent):
 	if scrimmage.getPlayerNum() == MAX_PLAYER:
 		await bot.send(ev, f'人数已满，可开始游戏。\n（[CQ:at,qq={scrimmage.room_master}]发送“开始大乱斗”开始）')
 
-
 @sv.on_fullmatch('开始大乱斗')
 async def game_start(bot, ev: CQEvent):
 	gid, uid = ev.group_id, ev.user_id
 	scrimmage = mgr.get_game(gid)
-	if not scrimmage or scrimmage.now_statu != NOW_STATU_WAIT:
-		await bot.send(ev, "当前群聊没有已创建的大乱斗")
+	if not scrimmage  or scrimmage.now_statu != NOW_STATU_WAIT:
 		return
 	if not uid == scrimmage.room_master:
 		await bot.finish(ev, '只有房主才能开始', at_sender=True)
@@ -1144,14 +1105,13 @@ async def game_start(bot, ev: CQEvent):
 		role_list += f'[CQ:at,qq={player_id}]'
 	await bot.send(ev, role_list)
 
-
-@sv.on_message()  # 选择角色
+@sv.on_message()#选择角色
 async def select_role(bot, ev: CQEvent):
 	gid, uid = ev.group_id, ev.user_id
 	scrimmage = mgr.get_game(gid)
-	if not scrimmage or scrimmage.now_statu != NOW_STATU_SELECT_ROLE:
+	if not scrimmage  or scrimmage.now_statu != NOW_STATU_SELECT_ROLE:
 		return
-	# 已加入房间的玩家才能选择角色
+	#已加入房间的玩家才能选择角色
 	if uid not in scrimmage.player_list:
 		return
 
@@ -1172,40 +1132,26 @@ async def select_role(bot, ev: CQEvent):
 			await asyncio.sleep(PROCESS_WAIT_TIME)
 			scrimmage.now_statu = NOW_STATU_OPEN
 
-
-@sv.on_fullmatch(('扔色子', '扔骰子', '丢色子', '丢骰子', '丢', '扔'))
+@sv.on_fullmatch(('扔色子','扔骰子','丢色子','丢骰子','丢','扔'))
 async def throw_dice(bot, ev: CQEvent):
-	"""丢色子处理
-	全字匹配命令('扔色子', '扔骰子', '丢色子', '丢骰子', '丢', '扔')
-	"""
-	# 获取触发指令的群 id, 用户 id
 	gid, uid = ev.group_id, ev.user_id
-	# 获取当前群的大乱斗对象
+
 	scrimmage = mgr.get_game(gid)
-	# 如果当前群未启用大乱斗或者大乱斗未开始则返回
-	if not scrimmage or scrimmage.now_statu != NOW_STATU_OPEN:
+	if not scrimmage  or scrimmage.now_statu != NOW_STATU_OPEN:
 		return
-	# 已加入房间的玩家才能丢色子
+	#已加入房间的玩家才能丢色子
 	if uid not in scrimmage.player_list:
 		return
-	# 不是当前回合的玩家无法丢色子
+	#不是当前回合的玩家无法丢色子
 	if scrimmage.getNowTurnPlayerObj().user_id != uid:
-		await bot.send(ev, '当前不是您的回合, 无法丢色子')
 		return
-	# 当前回合不是丢色子状态无法丢色子
+	#当前回合不是丢色子状态无法丢色子
 	if scrimmage.getPlayerObj(uid).now_stage != NOW_STAGE_DICE:
-		await bot.send(ev, '您当前未处于掷骰阶段, 无法丢色子')
 		return
-	# 丢一个 5 面骰作为步数
-	step = random.choice(range(1, 6))
+
+	step = random.choice(range(1,6))
 	await bot.send(ev, '色子结果为：' + str(step))
-	"""
-	触发大乱斗丢色子事件, 更改当前位置
-	all survivors 10 tp up↑
-	每 num_or_survivor 回合所有存活玩家 2 attack_distance UP↑, 10 ATK UP↑
-	"""
 	await scrimmage.throwDice(uid, step, bot, ev)
-	# 刷新当前状态图片
 	scrimmage.refreshNowImageStatu()
 
 	image = R.img(f'{IMAGE_PATH}/{gid}.png')
@@ -1215,28 +1161,27 @@ async def throw_dice(bot, ev: CQEvent):
 	await asyncio.sleep(PROCESS_WAIT_TIME)
 	await scrimmage.stageRemind(bot, ev)
 
-
-@sv.on_message()  # 使用技能
+@sv.on_message()#使用技能
 async def use_skill(bot, ev: CQEvent):
 	gid, uid = ev.group_id, ev.user_id
 
 	msg_text = ev.raw_message
-	match = re.match(r'^(\d+)( |) *(?:\[CQ:at,qq=(\d+)])?', msg_text)
+	match = re.match(r'^(\d+)( |) *(?:\[CQ:at,qq=(\d+)\])?', msg_text)
 	if not match and msg_text != '跳过':
 		return
 	scrimmage = mgr.get_game(gid)
-	if not scrimmage or scrimmage.now_statu != NOW_STATU_OPEN:
+	if not scrimmage  or scrimmage.now_statu != NOW_STATU_OPEN:
 		return
-	# 已加入房间的玩家才能释放技能
+	#已加入房间的玩家才能释放技能
 	if uid not in scrimmage.player_list:
 		return
-	# 不是当前回合的玩家无法释放技能
+	#不是当前回合的玩家无法释放技能
 	if scrimmage.getNowTurnPlayerObj().user_id != uid:
 		return
-	# 当前回合不是放技能状态无法放技能
+	#当前回合不是放技能状态无法放技能
 	if scrimmage.getPlayerObj(uid).now_stage != NOW_STAGE_SKILL:
 		return
-
+	
 	skill_id = ''
 	goal_player_id = ''
 	if match:
@@ -1257,21 +1202,20 @@ async def use_skill(bot, ev: CQEvent):
 	await asyncio.sleep(PROCESS_WAIT_TIME)
 	await scrimmage.stageRemind(bot, ev)
 
-
-@sv.on_fullmatch(('认输', '投降', '不玩了'))
+@sv.on_fullmatch(('认输','投降','不玩了'))
 async def throw_dice(bot, ev: CQEvent):
 	gid, uid = ev.group_id, ev.user_id
 
 	scrimmage = mgr.get_game(gid)
-	if not scrimmage or scrimmage.now_statu != NOW_STATU_OPEN:
+	if not scrimmage  or scrimmage.now_statu != NOW_STATU_OPEN:
 		return
-	# 已加入房间的玩家才能投降
+	#已加入房间的玩家才能投降
 	if uid not in scrimmage.player_list:
 		return
-	# 不是当前回合的玩家无法投降
+	#不是当前回合的玩家无法投降
 	if scrimmage.getNowTurnPlayerObj().user_id != uid:
 		return
-
+	
 	player = scrimmage.getPlayerObj(uid)
 	scrimmage.outDispose(player)
 	await bot.send(ev, f'{uid2card(uid, scrimmage.user_card_dict)}已投降')
@@ -1284,50 +1228,49 @@ async def throw_dice(bot, ev: CQEvent):
 		await bot.send(ev, image.cqcode)
 		await asyncio.sleep(PROCESS_WAIT_TIME)
 		await scrimmage.stageRemind(bot, ev)
+	
 
-
-@sv.on_fullmatch('查看属性')
+	
+@sv.on_fullmatch(('查看属性'))
 async def check_property(bot, ev: CQEvent):
 	gid, uid = ev.group_id, ev.user_id
 
 	scrimmage = mgr.get_game(gid)
-	if not scrimmage or scrimmage.now_statu != NOW_STATU_OPEN:
+	if not scrimmage  or scrimmage.now_statu != NOW_STATU_OPEN:
 		return
 	player = scrimmage.getPlayerObj(uid)
 	msg = player.checkStatu(scrimmage)
 	await bot.send(ev, "\n".join(msg))
 
-
 @sv.on_rex(r'^角色详情( |)([\s\S]*)')
 async def check_role(bot, ev: CQEvent):
 	match = ev['match']
-	if not match:
-		return
+	if not match : return
 
 	role_name = match.group(2)
 	character = chara.fromname(role_name)
 	if character.id != chara.UNKNOWN and character.id in ROLE:
 		role_info = ROLE[character.id]
-		msg = [f"名字：{role_info['name']}",
-			   f"生命值：{role_info['health']}",
-			   f"TP：{role_info['tp']}",
-			   f"攻击距离：{role_info['distance']}",
-			   f"攻击力：{role_info['attack']}",
-			   f"防御力：{role_info['defensive']}",
-			   f"技能："]
+		msg = []
+		msg.append(f"名字：{role_info['name']}")
+		msg.append(f"生命值：{role_info['health']}")
+		msg.append(f"TP：{role_info['tp']}")
+		msg.append(f"攻击距离：{role_info['distance']}")
+		msg.append(f"攻击力：{role_info['attack']}")
+		msg.append(f"防御力：{role_info['defensive']}")
+		msg.append(f"技能：")
 		for skill in role_info['active_skills']:
 			msg.append(f"{skill['name']}({skill['tp_cost']}tp)：{skill['text']}")
 		return await bot.send(ev, "\n".join(msg))
 
 	await bot.send(ev, '不存在的角色')
 
-
-@sv.on_fullmatch('结束大乱斗')
+@sv.on_fullmatch(('结束大乱斗'))
 async def game_end(bot, ev: CQEvent):
 	gid, uid = ev.group_id, ev.user_id
 
 	scrimmage = mgr.get_game(gid)
-	if not scrimmage or scrimmage.now_statu == NOW_STATU_END:
+	if not scrimmage  or scrimmage.now_statu == NOW_STATU_END:
 		return
 	if not priv.check_priv(ev, priv.ADMIN) and not uid == scrimmage.room_master:
 		await bot.finish(ev, '只有群管理或房主才能强制结束', at_sender=True)
@@ -1335,8 +1278,7 @@ async def game_end(bot, ev: CQEvent):
 	scrimmage.now_statu = NOW_STATU_END
 	await bot.send(ev, f"您已强制结束大乱斗，请等待结算")
 
-
-@sv.on_fullmatch(('PCR大乱斗', 'pcr大乱斗', '大乱斗帮助', 'PCR大乱斗帮助', 'pcr大乱斗帮助'))
+@sv.on_fullmatch(('PCR大乱斗','pcr大乱斗','大乱斗帮助','PCR大乱斗帮助','pcr大乱斗帮助'))
 async def game_help(bot, ev: CQEvent):
 	msg = '''《PCR大乱斗帮助》
 	基础命令：
@@ -1350,15 +1292,15 @@ async def game_help(bot, ev: CQEvent):
 	4、结束大乱斗
 	可以强制结束正在进行的大乱斗游戏
 	（该命令只有管理员和房主可用）
-	一、创建阶段：
+一、创建阶段：
 	1、创建大乱斗
 	2、加入大乱斗
 	3、开始大乱斗
-	二、选择角色阶段：
+二、选择角色阶段：
 	1、（角色名）
 	如：凯露 / 黑猫
 	（名字和外号都行）
-	三、对战阶段：
+三、对战阶段：
 	1、丢色子
 	2、（技能编号） @xxx
 	如：1 @xxx
@@ -1366,11 +1308,10 @@ async def game_help(bot, ev: CQEvent):
 	3、查看属性
 	可查看自己当前角色详细属性
 	4、投降 / 认输
-	'''
+'''
 	await bot.send(ev, msg)
 
-
-@sv.on_fullmatch('大乱斗规则')
+@sv.on_fullmatch(('大乱斗规则'))
 async def game_help_all_role(bot, ev: CQEvent):
 	msg = '''《PCR大乱斗规则》
 1、和大富翁类似，一个正方形环形跑道，跑道上有多个事件，通过丢色子走到特定的位置触发事件
@@ -1383,8 +1324,7 @@ async def game_help_all_role(bot, ev: CQEvent):
 '''
 	await bot.send(ev, msg)
 
-
-@sv.on_fullmatch('大乱斗角色')
+@sv.on_fullmatch(('大乱斗角色'))
 async def game_help_rule(bot, ev: CQEvent):
 	msg = '当前可选角色有：\n'
 	for role in ROLE.values():
