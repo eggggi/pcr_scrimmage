@@ -1026,7 +1026,8 @@ PROCESS_WAIT_TIME = 1	#避免发送太快增加的缓冲时间
 STAGE_WAIT_TIME = 30	#玩家阶段等待时间，超过这个时间判负。
 						#实际时间是 STAGE_WAIT_TIME * WAIT_TIME
 
-@sv.on_fullmatch('创建大乱斗')async def game_create(bot, ev: CQEvent):
+@sv.on_fullmatch('创建大乱斗')
+async def game_create(bot, ev: CQEvent):
 	gid, uid = ev.group_id, ev.user_id
 
 	if mgr.is_playing(gid):
