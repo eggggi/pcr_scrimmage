@@ -145,16 +145,16 @@ class Role:
 		{
 			BuffTriggerType.xx = {
 				BuffEffectType.xx = {
-					BuffType = [数值, 次数],
-					BuffType = [数值, 次数]
+					BuffType = [数值, 次数, flag],
+					BuffType = [数值, 次数, flag]
 				},
 				BuffEffectType.xx = {
-					BuffType = [数值, 次数]
+					BuffType = [数值, 次数, flag]
 				}
 			},
 			BuffTriggerType.xx = {
 				BuffEffectType.xx = {
-					BuffType = [数值, 次数]
+					BuffType = [数值, 次数, flag]
 				}
 			},
 		}
@@ -242,7 +242,7 @@ class Role:
 		effect_type = Buff[buffType]['effect_type']
 		if trigger_type not in self.buff:self.buff[trigger_type] = {}
 		if effect_type not in self.buff[trigger_type]:self.buff[trigger_type][effect_type] = {}
-		self.buff[trigger_type][effect_type][buffType] = [buff_info[1], buff_info[2]]
+		self.buff[trigger_type][effect_type][buffType] = [buff_info[1], buff_info[2], 0]
 	#buff触发器
 	def buffTrigger(self, trigger_type, num = 0):
 		if trigger_type in self.buff:
@@ -255,16 +255,23 @@ class Role:
 	def buffEffect(self, trigger_type, effect_type, buff_type, info, num):
 		if effect_type == BuffEffectType.Attr:
 			attr_type = Buff[buff_type]['attr_type']
-			self.attrChange(attr_type, info[0])
+			if trigger_type == BuffTriggerType.Normal:
+				if info[2] == 0:
+					self.attrChange(attr_type, info[0])
+					info[2] = 1
+			else:
+				self.attrChange(attr_type, info[0])
 		elif effect_type == BuffEffectType.Shield:
 			num += info[0]
 			if num > 0:num = 0
 		
 		info[1] -= 1
 		if info[1] <= 0 : 
+			if trigger_type == BuffTriggerType.Normal:
+				self.attrChange(attr_type, -info[0])
 			del self.buff[trigger_type][effect_type][buff_type]
 		else:
-			self.buff[trigger_type][effect_type][buff_type][1] = info[1]
+			self.buff[trigger_type][effect_type][buff_type] = info
 		return num
 
 

@@ -122,7 +122,7 @@ ROLE = {
 				}
 			},
 			{
-				"name":"能力吸附",
+				"name":"能量吸附",
 				"text":"对目标造成100(+1.0自身攻击力)伤害，所造成伤害的50%将转换为自身生命值",
 				"tp_cost":40,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
