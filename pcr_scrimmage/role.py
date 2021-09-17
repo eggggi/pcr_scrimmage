@@ -71,11 +71,6 @@ EFFECT_HEALTH = "health_change"			#生命值改变，正数为回血，负数为
 EFFECT_ATTR_CHANGE = "attr"				#属性改变，正数为增加，负数为减少			tuple元组 (属性类型，数值，加成类型，加成比例)
 										#属性类型/加成类型：attr.py , 为0时无加成
 
-EFFECT_DEFENSIVE = "defensive_change"	#防御改变，正数为增加，负数为减少 			number ↓同理
-EFFECT_DISTANCE = "distance_change"
-EFFECT_ATTACK = "attack_change"
-EFFECT_TP = "tp_change"					#↑同理
-
 EFFECT_MOVE = "move"					#移动，正数为前进负数为后退（触发跑道事件）	number
 EFFECT_MOVE_GOAL = "move_goal"			#向目标移动（一个技能有多个效果且包括向目标移动，向目标移动效果必须最先触发） tuple元组(移动距离，是否无视攻击范围)
 										#这个效果必须放在被动（不触发跑道事件）
@@ -177,10 +172,9 @@ ROLE = {
 				"text":"自身回复250点生命值，并增加50点攻击力",
 				"tp_cost":50,
 				"trigger": TRIGGER_ME,
-				"passive":[],
+				"passive":[1],
 				"effect":{
 					EFFECT_ATTR_CHANGE:(Attr.NOW_HEALTH, 250, 0, 0),
-					EFFECT_ATTR_CHANGE:(Attr.ATTACK, 50, 0, 0),
 				}
 			}
 		],
@@ -189,6 +183,12 @@ ROLE = {
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"effect":{
 					EFFECT_MOVE_GOAL:(3, False),
+				}
+			},
+			{
+				"trigger": TRIGGER_SELECT_EXCEPT_ME,
+				"effect":{
+					EFFECT_ATTR_CHANGE:(Attr.ATTACK, 50, 0, 0),
 				}
 			}
 		]
@@ -219,11 +219,10 @@ ROLE = {
 				"text":"回复自身100(+0.5自身防御力)生命值，并增加10点攻击力",
 				"tp_cost":20,
 				"trigger": TRIGGER_ME,
-				"passive":[],
+				"passive":[2],
 
 				"effect":{
 					EFFECT_ATTR_CHANGE:(Attr.NOW_HEALTH, 100, Attr.DEFENSIVE, 0.5),
-					EFFECT_ATTR_CHANGE:(Attr.ATTACK, 10, 0, 0),
 				}
 			},
 			{
@@ -249,6 +248,12 @@ ROLE = {
 				"trigger": TRIGGER_ME,
 				"effect":{
 					EFFECT_ATTR_CHANGE:(Attr.DEFENSIVE, 50, 0, 0),
+				}
+			},
+			{
+				"trigger": TRIGGER_ME,
+				"effect":{
+					EFFECT_ATTR_CHANGE:(Attr.ATTACK, 10, 0, 0),
 				}
 			}
 		]
@@ -331,11 +336,10 @@ ROLE = {
 				"text":"自身增加20点攻击力和20点防御力",
 				"tp_cost":20,
 				"trigger": TRIGGER_ME,
-				"passive":[],
+				"passive":[1],
 
 				"effect":{
 					EFFECT_ATTR_CHANGE:(Attr.ATTACK, 20, 0, 0),
-					EFFECT_ATTR_CHANGE:(Attr.DEFENSIVE, 20, 0, 0),
 				}
 			},
 			{
@@ -368,6 +372,12 @@ ROLE = {
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"effect":{
 					EFFECT_MOVE_GOAL:(3, False),
+				}
+			},
+			{
+				"trigger": TRIGGER_ME,
+				"effect":{
+					EFFECT_ATTR_CHANGE:(Attr.DEFENSIVE, 20, 0, 0),
 				}
 			},
 		]
@@ -480,12 +490,11 @@ ROLE = {
 				"text":"对目标造成100(+1.5自身攻击力)伤害，并降低目标10点攻击力和10点TP",
 				"tp_cost":20,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
-				"passive":[],
+				"passive":[2],
 
 				"effect":{
 					EFFECT_HURT:(100, Attr.ATTACK, 0, 1.5, False),
 					EFFECT_ATTR_CHANGE:(Attr.ATTACK, -10, 0, 0),
-					EFFECT_ATTR_CHANGE:(Attr.TP, -10, 0, 0),
 				}
 			},
 			{
@@ -511,6 +520,12 @@ ROLE = {
 				"trigger": TRIGGER_ME,
 				"effect":{
 					EFFECT_ATTR_CHANGE:(Attr.NOW_HEALTH, 100, 0, 0)
+				}
+			},
+			{
+				"trigger": TRIGGER_SELECT_EXCEPT_ME,
+				"effect":{
+					EFFECT_ATTR_CHANGE:(Attr.TP, -10, 0, 0),
 				}
 			}
 		],
@@ -540,11 +555,10 @@ ROLE = {
 				"text":"自身增加50点攻击力和1点攻击距离",
 				"tp_cost":30,
 				"trigger": TRIGGER_ME,
-				"passive":[],
+				"passive":[0],
 
 				"effect":{
 					EFFECT_ATTR_CHANGE:(Attr.ATTACK, 50, 0, 0),
-					EFFECT_ATTR_CHANGE:(Attr.DISTANCE, 1, 0, 0),
 				}
 			},
 			{
@@ -561,7 +575,14 @@ ROLE = {
 				}
 			}
 		],
-		"passive_skills": []
+		"passive_skills": [
+			{
+				"trigger": TRIGGER_ME,
+				"effect":{
+					EFFECT_ATTR_CHANGE:(Attr.DISTANCE, 1, 0, 0),
+				}
+			}
+		]
 
 	}
 
