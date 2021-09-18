@@ -716,22 +716,23 @@ class PCRScrimmage:
 
 		#属性改变
 		if EFFECT_ATTR_CHANGE in skill_effect:
-			attr_type	  = skill_effect[EFFECT_ATTR_CHANGE][0]	#属性类型
-			num 		  = skill_effect[EFFECT_ATTR_CHANGE][1]	#基础数值
-			addition_type = skill_effect[EFFECT_ATTR_CHANGE][2]	#加成类型
-			addition_prop = skill_effect[EFFECT_ATTR_CHANGE][3]	#加成比例
-			text = AttrTextChange(attr_type)
+			for effect in skill_effect[EFFECT_ATTR_CHANGE]:
+				attr_type	  = effect[0]	#属性类型
+				num 		  = effect[1]	#基础数值
+				addition_type = effect[2]	#加成类型
+				addition_prop = effect[3]	#加成比例
+				text = AttrTextChange(attr_type)
 
-			if addition_type != 0 and addition_prop != 0 :
-				num = num + goal_player.attr[addition_type] * addition_prop	#计算加成后的数值
-			goal_player.attrChange(attr_type, num)
+				if addition_type != 0 and addition_prop != 0 :
+					num = math.floor(num + goal_player.attr[addition_type] * addition_prop)	#计算加成后的数值
+				goal_player.attrChange(attr_type, num)
 
-			if num < 0:
-				back_msg.append(f'{goal_player_name}降低了{abs(num)}点{text}')
-				if goal_player.now_stage == NOW_STAGE_OUT:
-					back_msg.append(f'[CQ:at,qq={goal_player.user_id}]出局')
-			else:
-				back_msg.append(f'{goal_player_name}增加了{num}点{text}')
+				if num < 0:
+					back_msg.append(f'{goal_player_name}降低了{abs(num)}点{text}')
+					if goal_player.now_stage == NOW_STAGE_OUT:
+						back_msg.append(f'[CQ:at,qq={goal_player.user_id}]出局')
+				else:
+					back_msg.append(f'{goal_player_name}增加了{num}点{text}')
 		
 		#buff效果
 		if EFFECT_BUFF in skill_effect:
