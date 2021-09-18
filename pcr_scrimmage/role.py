@@ -526,7 +526,7 @@ ROLE = {
 				"text":"恢复目标50TP,恢复目标根据自身防御力70%的生命值",
 				"tp_cost":0,
 				"trigger":TRIGGER_SELECT,
-				"passive":[2],
+				"passive":[],
 				
 				"effect":{
 					EFFECT_ATTR_CHANGE:[
