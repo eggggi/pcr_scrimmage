@@ -27,11 +27,7 @@
 
 	################（技能效果可增加，增加后在 skillEffect() 里做处理）################
 	效果effect：(可选单个或多个) (被动技能：对自己和对目标的效果要分开)
-		health_change			生命值改变，正数为回血，负数为造成伤害
-		defensive_change		防御改变，正数为增加，负数为减少
-		distance_change
-		attack_change
-		tp_change
+		attr				属性改变，如果要同时改变多个属性值，每个属性都需要单独添加一条被动
 
 		move				移动，正数为前进负数为后退	number
 		move_goal			向目标移动（一个技能有多个效果且包括向目标移动，向目标移动效果必须最先触发）
@@ -63,10 +59,6 @@ EFFECT_LIFESTEAL = "life_steal"			#生命偷取	float 伤害-生命值之间的�
 										#EFFECT_LIFESTEAL需要EFFECT_HURT作为前置
 
 EFFECT_BUFF = "buff"					#buff效果	tuple元组 (BuffType.xx, 数值, 可触发次数)
-
-
-EFFECT_HEALTH = "health_change"			#生命值改变，正数为回血，负数为扣血			tuple元组 (数值，加成类型，加成比例)
-										#加成类型：attr.py , 为0时无加成
 
 EFFECT_ATTR_CHANGE = "attr"				#属性改变，正数为增加，负数为减少			tuple元组 (属性类型，数值，加成类型，加成比例)
 										#属性类型/加成类型：attr.py , 为0时无加成

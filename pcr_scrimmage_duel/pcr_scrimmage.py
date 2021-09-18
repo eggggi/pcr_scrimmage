@@ -774,7 +774,7 @@ class PCRScrimmage:
 
 	#伤害计算独立出来处理
 	def hurtCalculate(self, skill_effect, use_skill_player:Role, goal_player:Role, back_msg:List):
-		num 		  = skill_effect[EFFECT_HURT][0]					#基础数值
+		num 		  = abs(skill_effect[EFFECT_HURT][0])					#基础数值
 		addition_type = skill_effect[EFFECT_HURT][1]					#加成类型
 		addition_goal = (skill_effect[EFFECT_HURT][2] == 0 				#（三目）
 							and use_skill_player or goal_player) 		#加成的数值对象：0自己 1目标
