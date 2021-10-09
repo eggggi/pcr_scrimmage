@@ -23,8 +23,12 @@ class BuffEffectType(IntEnum):
 class BuffType(IntEnum):
 	NormalAttrAtkUp		= 10101
 	NormalAttrAtkDown	= 10102
+	NormalAttrDefUp		= 10103
+
 	TurnAttrAtkUp		= 20101
 	TurnAttrAtkDown		= 20102
+	TurnAttrHelDown		= 20103
+
 	Shield				= 30201
 
 Buff = {
@@ -44,6 +48,15 @@ Buff = {
 
 		'attr_type':Attr.ATTACK,
 	},
+	BuffType.NormalAttrDefUp:{
+		'name':'守护',
+		'text':'增加{0}点防御力，持续{1}回合',
+		'trigger_type':BuffTriggerType.Normal,
+		'effect_type':BuffEffectType.Attr,
+
+		'attr_type':Attr.DEFENSIVE,
+	},
+
 	BuffType.TurnAttrAtkUp:{
 		'name':'越战越勇',
 		'text':'每回合永久增加{0}点攻击力，持续{1}回合',
@@ -60,6 +73,14 @@ Buff = {
 
 		'attr_type':Attr.ATTACK,
 	},
+	BuffType.TurnAttrHelDown:{
+		'name':'中毒',
+		'text':'每回合降低{0}点生命值，持续{1}回合',
+		'trigger_type':BuffTriggerType.Turn,
+		'effect_type':BuffEffectType.Attr,
+		'attr_type':Attr.NOW_HEALTH,
+	},
+
 	BuffType.Shield:{
 		'name':'护盾',
 		'text':'增加一个能承受{0}伤害的护盾，可触发{1}次',

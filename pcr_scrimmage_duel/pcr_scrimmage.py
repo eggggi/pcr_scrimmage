@@ -32,9 +32,9 @@ from .attr import Attr, AttrTextChange
 from .buff import BuffEffectType, BuffTriggerType, Buff
 from .runway_case import (CASE_NONE, CASE_ATTACK, CASE_DEFENSIVE, CASE_HEALTH, 
 						  CASE_MOVE, CASE_TP, RUNWAY_CASE)
-from .role import (EFFECT_BUFF, ROLE, 
+from .role import (EFFECT_BUFF, ROLE, EFFECT_LOCKTURN,
 				   EFFECT_HURT, EFFECT_ATTR_CHANGE, EFFECT_MOVE, EFFECT_MOVE_GOAL, EFFECT_LIFESTEAL,
-				   EFFECT_OUT_TP, EFFECT_OUT_TURN, EFFECT_IGNORE_DIST, EFFECT_AOE, EFFECT_ELIMINATE,
+				   EFFECT_OUT_TP, EFFECT_OUT_LOCKTURN, EFFECT_IGNORE_DIST, EFFECT_AOE, EFFECT_ELIMINATE,
 				   TRIGGER_ME, TRIGGER_ALL_EXCEPT_ME, TRIGGER_ALL, TRIGGER_SELECT, TRIGGER_SELECT_EXCEPT_ME, TRIGGER_NEAR)
 
 from .get_gold import (ScoreCounter, daily_card_limiter, 
@@ -266,14 +266,17 @@ class Role:
 		elif effect_type == BuffEffectType.Shield:
 			num += info[0]
 			if num > 0:num = 0
+			info[1] -= 1
 		
-		info[1] -= 1
 		if info[1] <= 0 : 
 			if trigger_type == BuffTriggerType.Normal:
 				self.attrChange(attr_type, -info[0])
 			del self.buff[trigger_type][effect_type][buff_type]
 		else:
 			self.buff[trigger_type][effect_type][buff_type] = info
+
+		if effect_type != BuffEffectType.Shield:
+			info[1] -= 1
 		return num
 
 
@@ -291,11 +294,11 @@ class Role:
 		]
 		if len(self.buff) != 0:
 			msg.append('\nbuff效果列表:')
-			for trigger_type, buff_effect_infos in self.buff.items():
-				for effect_type, buff_infos in buff_effect_infos.items():
+			for _, buff_effect_infos in self.buff.items():
+				for _, buff_infos in buff_effect_infos.items():
 					for buff_type, info in buff_infos.items():
 						buff_text:str = Buff[buff_type]['text']
-						buff_text = buff_text.format(info[0], info[1])
+						buff_text = buff_text.format(info[0], info[1] == 0 and 1 or info[1])
 						msg.append(f'{Buff[buff_type]["name"]}:{buff_text}')
 		return msg
 
@@ -761,11 +764,17 @@ class PCRScrimmage:
 					back_msg.append(f'{goal_player_name}被击倒，{use_player_name}降低了{abs(num)}点TP')
 				else:
 					back_msg.append(f'{goal_player_name}被击倒，{use_player_name}增加了{num}点TP')
-		
+
 		#回合锁定效果
-		if EFFECT_OUT_TURN in skill_effect:
+		if EFFECT_LOCKTURN in skill_effect:
+			num = skill_effect[EFFECT_LOCKTURN]
+			self.lock_turn = num
+			back_msg.append(f'{use_player_name}锁定了{num}回合')
+
+		#击退回合锁定效果
+		if EFFECT_OUT_LOCKTURN in skill_effect:
 			if goal_player.now_stage == NOW_STAGE_OUT:
-				num = skill_effect[EFFECT_OUT_TURN]
+				num = skill_effect[EFFECT_OUT_LOCKTURN]
 				self.lock_turn = num
 				back_msg.append(f'{use_player_name}锁定了{num}回合')
 
@@ -775,7 +784,7 @@ class PCRScrimmage:
 
 	#伤害计算独立出来处理
 	def hurtCalculate(self, skill_effect, use_skill_player:Role, goal_player:Role, back_msg:List):
-		num 		  = abs(skill_effect[EFFECT_HURT][0])					#基础数值
+		num 		  = abs(skill_effect[EFFECT_HURT][0])				#基础数值
 		addition_type = skill_effect[EFFECT_HURT][1]					#加成类型
 		addition_goal = (skill_effect[EFFECT_HURT][2] == 0 				#（三目）
 							and use_skill_player or goal_player) 		#加成的数值对象：0自己 1目标
