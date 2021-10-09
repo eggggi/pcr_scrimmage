@@ -420,7 +420,7 @@ ROLE = {
 			},
 			{
 				"name":"附魔之箭",
-				"text":"对目标造成120(+1.5自身攻击力)伤害,并提升自身100攻击力",
+				"text":"对目标造成120(+1.5自身攻击力)伤害,并提升自身80攻击力",
 				"tp_cost":100,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[1],
@@ -440,7 +440,7 @@ ROLE = {
 				{
 				"trigger": TRIGGER_ME,
 				"effect":{
-					EFFECT_ATTR_CHANGE:[(Attr.ATTACK, 60, 0, 0)]
+					EFFECT_ATTR_CHANGE:[(Attr.ATTACK, 80, 0, 0)]
 					}
 				}
 		]
