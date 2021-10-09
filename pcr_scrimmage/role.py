@@ -705,7 +705,7 @@ ROLE = {
 
 				"effect":{
 					EFFECT_HURT:(100, Attr.ATTACK, 0, 1.0, False),
-					EFFECT_ATTR_CHANGE:[(Attr.DEFENSIVE, 50, 0, 0)]
+					EFFECT_ATTR_CHANGE:[(Attr.DEFENSIVE, -50, 0, 0)]
 				}
 			},
 			{
