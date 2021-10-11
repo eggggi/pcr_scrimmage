@@ -100,6 +100,17 @@ ROLE = {
 
 		"active_skills" : [
 			{
+				"name":"普通攻击",
+				"text":"对目标造成0(+1.0自身攻击力)伤害",
+				"tp_cost":10,
+				"trigger": TRIGGER_SELECT_EXCEPT_ME,
+				"passive":[],
+
+				"effect":{
+					EFFECT_HURT:(0, Attr.ATTACK, 0, 1, False)
+				}
+			},
+			{
 				"name":"闪电球",
 				"text":"对目标造成100(+0.5自身攻击力)伤害并减少50防御，自身增加20点攻击力",
 				"tp_cost":20,
@@ -151,6 +162,17 @@ ROLE = {
 		"tp":0,
 
 		"active_skills" : [
+			{
+				"name":"普通攻击",
+				"text":"对目标造成0(+1.0自身攻击力)伤害",
+				"tp_cost":0,
+				"trigger": TRIGGER_SELECT_EXCEPT_ME,
+				"passive":[],
+
+				"effect":{
+					EFFECT_HURT:(0, Attr.ATTACK, 0, 1, False)
+				}
+			},
 			{
 				"name":"三连击",
 				"text":"向目标移动3格，并对目标造成100(+1.5自身攻击力)伤害",
@@ -215,6 +237,17 @@ ROLE = {
 				}
 			},
 			{
+				"name":"跳砍",
+				"text":"对目标造成80(+0.8自身防御力)伤害",
+				"tp_cost":20,
+				"trigger": TRIGGER_SELECT_EXCEPT_ME,
+				"passive":[],
+
+				"effect":{
+					EFFECT_HURT:(0, Attr.DEFENSIVE, 0, 1, False)
+				}
+			},
+			{
 				"name":"超大饭团",
 				"text":"回复自身100(+0.5自身防御力)生命值，并增加10点攻击力",
 				"tp_cost":20,
@@ -276,24 +309,24 @@ ROLE = {
 			},
 			{
 				"name":"毛茸茸突袭",
-				"text":"向目标移动3格，对目标造成60(+0.7自身攻击力)伤害，并增加自身50点防御",
+				"text":"向目标移动3格，对目标造成60(+0.7自身防御力)伤害，并增加自身50点防御",
 				"tp_cost":30,
 				"trigger":TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[0,1],
 				
 				"effect":{
-					EFFECT_HURT:(-60, Attr.ATTACK, 0, 0.7, False),
+					EFFECT_HURT:(-60, Attr.DEFENSIVE, 0, 0.7, False),
 				}
 			},
 			{
 				"name":"毛茸茸挥击",
-				"text":"向目标移动4格，对目标造成100(+1.0自身攻击力)伤害，并增加自身100点防御",
+				"text":"向目标移动4格，对目标造成120(+1.0自身防御力)伤害，并增加自身100点防御",
 				"tp_cost":60,
 				"trigger":TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[2,3],
 
 				"effect":{
-					EFFECT_HURT:(-100, Attr.ATTACK, 0, 1.0, False),
+					EFFECT_HURT:(-120, Attr.DEFENSIVE, 0, 1.0, False),
 				},
 			}
 		],
@@ -334,6 +367,17 @@ ROLE = {
 
 		"active_skills":[
 			{
+				"name":"普通攻击",
+				"text":"对目标造成0(+1.0自身攻击力)伤害",
+				"tp_cost":0,
+				"trigger": TRIGGER_SELECT_EXCEPT_ME,
+				"passive":[],
+
+				"effect":{
+					EFFECT_HURT:(0, Attr.ATTACK, 0, 1, False)
+				}
+			},
+			{
 				"name":"血腥爆破",
 				"text":"对目标造成100(+1.2自身攻击力)的伤害,并提升自身50攻击力,对自身造成100真实伤害",
 				"tp_cost":20,
@@ -358,7 +402,7 @@ ROLE = {
 			},
 			{
 				"name":"朱色之噬",
-				"text":"对目标及其半径4范围内的所有玩家造成150(+1.5自身攻击力)的伤害,并恢复等同伤害的生命值",
+				"text":"对目标及其半径4范围内除自己外的所有玩家造成150(+1.5自身攻击力)的伤害,并恢复等同伤害的生命值",
 				"tp_cost":50,
 				"trigger":TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[],
@@ -390,12 +434,23 @@ ROLE = {
 	1038:{
 		"name":"栞",
 		"health":750,
-		"distance":15,
+		"distance":10,
 		"attack":80,
 		"defensive":60,
 		"tp":10,
 
 		"active_skills" : [
+			{
+				"name":"普通攻击",
+				"text":"对目标造成0(+1.0自身攻击力)伤害",
+				"tp_cost":10,
+				"trigger": TRIGGER_SELECT_EXCEPT_ME,
+				"passive":[],
+
+				"effect":{
+					EFFECT_HURT:(0, Attr.ATTACK, 0, 1, False)
+				}
+			},
 			{
 				"name":"风之箭",
 				"text":"对目标造成80(+1.0自身攻击力)伤害,并自身回复50tp",
@@ -520,7 +575,7 @@ ROLE = {
 			{
 				"name":"普通攻击",
 				"text":"对目标造成0(+1.0自身攻击力)伤害",
-				"tp_cost":10,
+				"tp_cost":0,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[],
 
@@ -590,6 +645,17 @@ ROLE = {
 
 		"active_skills" : [
 			{
+				"name":"普通攻击",
+				"text":"对目标造成0(+1.0自身攻击力)伤害",
+				"tp_cost":10,
+				"trigger": TRIGGER_SELECT_EXCEPT_ME,
+				"passive":[],
+
+				"effect":{
+					EFFECT_HURT:(0, Attr.ATTACK, 0, 1, False)
+				}
+			},
+			{
 				"name":"极限充能",
 				"text":"消耗自身100HP提高50攻击力，并自身回复30TP",
 				"tp_cost":0,
@@ -601,6 +667,18 @@ ROLE = {
 						(Attr.ATTACK, 50, 0, 0),
 						(Attr.TP, 30, 0, 0),
 						(Attr.NOW_HEALTH, -100, 0, 0,)],
+				}
+			},
+			{
+				"name":"暗影吮吸",
+				"text":"对目标造成80(+0.8自身攻击力)伤害，并将所造成伤害的20%转换为生命值",
+				"tp_cost":20,
+				"trigger": TRIGGER_SELECT_EXCEPT_ME,
+				"passive":[],
+
+				"effect":{
+					EFFECT_HURT:(80, Attr.ATTACK, 0, 0.8, False),
+					EFFECT_LIFESTEAL:0.2,
 				}
 			},
 			{
@@ -628,6 +706,17 @@ ROLE = {
 		"tp":0,
 
 		"active_skills" : [
+			{
+				"name":"普通攻击",
+				"text":"对目标造成0(+1.0自身攻击力)伤害",
+				"tp_cost":0,
+				"trigger": TRIGGER_SELECT_EXCEPT_ME,
+				"passive":[],
+
+				"effect":{
+					EFFECT_HURT:(0, Attr.ATTACK, 0, 1, False)
+				}
+			},
 			{
 				"name":"蹦蹦跳跳",
 				"text":"自身增加20点攻击力和20点防御力",
@@ -678,12 +767,23 @@ ROLE = {
 	1006:{
 		"name":"茜里",
 		"health":1000,
-		"distance":8,
+		"distance":10,
 		"attack":100,
 		"defensive":50,
 		"tp":0,
 
 		"active_skills" : [
+			{
+				"name":"普通攻击",
+				"text":"对目标造成0(+1.0自身攻击力)伤害",
+				"tp_cost":10,
+				"trigger": TRIGGER_SELECT_EXCEPT_ME,
+				"passive":[],
+
+				"effect":{
+					EFFECT_HURT:(0, Attr.ATTACK, 0, 1, False)
+				}
+			},
 			{
 				"name":"小恶魔之吻",
 				"text":"对目标造成100(+1.0自身攻击力)伤害，并将所造成伤害的50%转换为生命值",
@@ -711,7 +811,7 @@ ROLE = {
 			{
 				"name":"甜蜜恶魔声援",
 				"text":"自身增加200点攻击力，持续1回合，并继续下一回合",
-				"tp_cost":0,
+				"tp_cost":50,
 				"trigger": TRIGGER_ME,
 				"passive":[],
 
@@ -732,6 +832,17 @@ ROLE = {
 		"tp":0,
 
 		"active_skills" : [
+			{
+				"name":"普通攻击",
+				"text":"对目标造成0(+1.0自身攻击力)伤害",
+				"tp_cost":10,
+				"trigger": TRIGGER_SELECT_EXCEPT_ME,
+				"passive":[],
+
+				"effect":{
+					EFFECT_HURT:(0, Attr.ATTACK, 0, 1, False)
+				}
+			},
 			{
 				"name":"小炸弹",
 				"text":"对目标及其半径4范围内的所有玩家造成100(+1.0自身攻击力)伤害（包括自己）",
@@ -780,6 +891,17 @@ ROLE = {
 
 		"active_skills" : [
 			{
+				"name":"普通攻击",
+				"text":"对目标造成0(+1.0自身攻击力)伤害",
+				"tp_cost":0,
+				"trigger": TRIGGER_SELECT_EXCEPT_ME,
+				"passive":[],
+
+				"effect":{
+					EFFECT_HURT:(0, Attr.ATTACK, 0, 1, False)
+				}
+			},
+			{
 				"name":"破甲突刺",
 				"text":"无视距离，对离自己最近的目标造成100(+1.0自身攻击力)伤害，并降低目标50点防御力",
 				"tp_cost":20,
@@ -826,6 +948,17 @@ ROLE = {
 		"tp":10,
 
 		"active_skills" : [
+			{
+				"name":"普通攻击",
+				"text":"对目标造成0(+1.0自身攻击力)伤害",
+				"tp_cost":0,
+				"trigger": TRIGGER_SELECT_EXCEPT_ME,
+				"passive":[],
+
+				"effect":{
+					EFFECT_HURT:(0, Attr.ATTACK, 0, 1, False)
+				}
+			},
 			{
 				"name":"花瓣射击",
 				"text":"对目标造成100(+1.5自身攻击力)伤害，并降低目标10点攻击力和10点TP",
