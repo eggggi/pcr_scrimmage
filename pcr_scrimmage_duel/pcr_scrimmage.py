@@ -257,7 +257,8 @@ class Role:
 	def buffEffect(self, trigger_type, effect_type, buff_type, info, num):
 		if effect_type == BuffEffectType.Attr:
 			attr_type = Buff[buff_type]['attr_type']
-			if trigger_type == BuffTriggerType.Normal:
+			if (trigger_type == BuffTriggerType.Normal or 
+				trigger_type == BuffTriggerType.NormalSelf):
 				if info[2] == 0:
 					self.attrChange(attr_type, info[0])
 					info[2] = 1
@@ -269,7 +270,8 @@ class Role:
 			info[1] -= 1
 		
 		if info[1] <= 0 : 
-			if trigger_type == BuffTriggerType.Normal:
+			if (trigger_type == BuffTriggerType.Normal or 
+				trigger_type == BuffTriggerType.NormalSelf):
 				self.attrChange(attr_type, -info[0])
 			del self.buff[trigger_type][effect_type][buff_type]
 		else:
@@ -826,6 +828,8 @@ class PCRScrimmage:
 			msg.append(f'[CQ:at,qq={player.user_id}]的丢色子阶段(发送 丢色子)')
 			await bot.send(ev, "\n".join(msg))
 		elif stage == NOW_STAGE_SKILL:
+			self.getPlayerObj(player.user_id).buffTrigger(BuffTriggerType.NormalSelf)
+			self.getPlayerObj(player.user_id).buffTrigger(BuffTriggerType.TurnSelf)
 			msg.append(f'[CQ:at,qq={player.user_id}]的放技能阶段：\n(发送技能编号，如需选择目标则@目标)')
 			skill_list = player.active_skills
 			skill_num = 0

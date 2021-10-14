@@ -1,6 +1,9 @@
 # buff会一直保存在玩家身上，达到触发条件时扣除触发次数，次数扣完后删除
 # buff结构 (BuffType.xx, 数值, 可触发次数)
 
+###### 当前默认的回合机制，是每个玩家丢一次色子为经过一回合
+######
+
 from enum import IntEnum
 from .attr import Attr
 
@@ -10,6 +13,8 @@ class BuffTriggerType(IntEnum):
 	Turn		= 2		#回合触发型buff，每回合都触发一次（造成的属性变化会永久保留）
 	Hurt		= 3		#受伤时触发型buff，每次被主动攻击时触发一次（跑道事件或其他buff造成的伤害不会算入）
 						#简单来说就是被 EFFECT_HURT 触发的
+	NormalSelf	= 4		#Normal 的自我回合版，轮到自己才算经过一回合
+	TurnSelf	= 5		#Turn 的自我回合版，轮到自己才算经过一回合
 
 #buff效果类型
 class BuffEffectType(IntEnum):
