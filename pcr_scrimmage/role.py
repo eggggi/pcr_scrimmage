@@ -10,6 +10,7 @@
 	attack			攻击力		number
 	defensive		防御力		number
 	tp				能量值		number
+	crit			暴击		float	暴击概率百分比，1为100%
 	active_skills	主动技能	list[dict]
 	passive_skills	被动技能	list[dict] 依赖主动技能
 		被动技能的主要作用，是为了让一个主动技能可以同时选择不同的触发对象
@@ -96,6 +97,7 @@ ROLE = {
 		"distance":10,
 		"attack":100,
 		"defensive":60,
+		"crit":10,
 		"tp":0,
 
 		"active_skills" : [
@@ -159,6 +161,7 @@ ROLE = {
 		"distance":6,
 		"attack":50,
 		"defensive":70,
+		"crit":5,
 		"tp":0,
 
 		"active_skills" : [
@@ -185,7 +188,7 @@ ROLE = {
 			},
 			{
 				"name":"光之守护",
-				"text":"增加200点防御力，持续4个回合",
+				"text":"增加200点防御力，持续4个玩家回合",
 				"tp_cost":20,
 				"trigger": TRIGGER_ME,
 				"passive":[],
@@ -222,6 +225,7 @@ ROLE = {
 		"distance":5,
 		"attack":60,
 		"defensive":100,
+		"crit":5,
 		"tp":0,
 
 		"active_skills" : [
@@ -293,6 +297,7 @@ ROLE = {
 		"distance":5,
 		"attack":50,
 		"defensive":150,
+		"crit":0,
 		"tp":0,
 
 		"active_skills":[
@@ -305,6 +310,18 @@ ROLE = {
 
 				"effect":{
 					EFFECT_HURT:(0, Attr.ATTACK, 0, 1, False)
+				}
+			},
+			{
+				"name":"护盾",
+				"text":"为自己增加一个200点生命值的护盾（只可触发1次），并增加20点防御力",
+				"tp_cost":30,
+				"trigger": TRIGGER_ME,
+				"passive":[],
+
+				"effect":{
+					EFFECT_BUFF:(BuffType.Shield, 200, 1),
+					EFFECT_ATTR_CHANGE:[(Attr.DEFENSIVE, 20, 0, 0)],
 				}
 			},
 			{
@@ -363,6 +380,7 @@ ROLE = {
 		"distance":7,
 		"attack":100,
 		"defensive":80,
+		"crit":20,
 		"tp":0,
 
 		"active_skills":[
@@ -379,25 +397,25 @@ ROLE = {
 			},
 			{
 				"name":"血腥爆破",
-				"text":"对目标造成100(+1.2自身攻击力)的伤害,并提升自身50攻击力,对自身造成100真实伤害",
-				"tp_cost":20,
+				"text":"对目标造成100(+1.0自身攻击力)的伤害,并提升自身25攻击力,对自身造成100(+0.1攻击力)伤害",
+				"tp_cost":0,
 				"trigger":TRIGGER_SELECT_EXCEPT_ME,
-				"passive":[0],
+				"passive":[0,1],
 
 				"effect":{
-					EFFECT_HURT:(100, Attr.ATTACK, 0, 1.2, False),
+					EFFECT_HURT:(100, Attr.ATTACK, 0, 1.0, False),
 				}
 			},
 			{
 				"name":"血腥之矛",
-				"text":"对目标及其半径4范围内的所有玩家造成100(+1.2自身攻击力)的伤害,对自身造成100的真实伤害",
+				"text":"对目标及其半径4范围内的所有玩家造成100(+1.0自身攻击力)的伤害,对自身造成100(+0.1攻击力)伤害",
 				"tp_cost":20,
 				"trigger":TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[1],
 				
 				"effect":{
 					EFFECT_AOE:(4, False),
-					EFFECT_HURT:(100, Attr.ATTACK, 0, 1.2, False)
+					EFFECT_HURT:(100, Attr.ATTACK, 0, 1.0, False)
 				}
 			},
 			{
@@ -418,15 +436,13 @@ ROLE = {
 			{
 				"trigger":TRIGGER_ME,
 				"effect":{
-					EFFECT_ATTR_CHANGE:[
-						(Attr.ATTACK, 50, 0, 0),
-						(Attr.NOW_HEALTH, -100, 0, 0)],
+					EFFECT_ATTR_CHANGE:[(Attr.ATTACK, 25, 0, 0)],
 				}
 			},
 			{
 				"trigger":TRIGGER_ME,
 				"effect":{
-					EFFECT_ATTR_CHANGE:[(Attr.NOW_HEALTH, 100, 0, 0)],
+					EFFECT_HURT:(100, Attr.ATTACK, 0, 0.1, False),
 				}
 			}
 		]
@@ -437,6 +453,7 @@ ROLE = {
 		"distance":10,
 		"attack":80,
 		"defensive":60,
+		"crit":5,
 		"tp":10,
 
 		"active_skills" : [
@@ -489,7 +506,7 @@ ROLE = {
 				{
 				"trigger": TRIGGER_ME,
 				"effect":{
-					EFFECT_ATTR_CHANGE:[(Attr.TP, 50, 0, 0)]
+					EFFECT_ATTR_CHANGE:[(Attr.NOW_TP, 50, 0, 0)]
 					}
 				},
 				{
@@ -502,10 +519,11 @@ ROLE = {
 	},
 	1036:{
 		"name":"镜华",
-		"health":700,
+		"health":800,
 		"distance":15,
 		"attack":150,
 		"defensive":50,
+		"crit":0,
 		"tp":0,
 
 		"active_skills" : [
@@ -522,35 +540,36 @@ ROLE = {
 			},
 			{
 				"name":"魔法增幅",
-				"text":"自身增加50点攻击力",
+				"text":"自身增加50点攻击力, 且下次攻击增加50%暴击概率",
 				"tp_cost":20,
 				"trigger": TRIGGER_ME,
 				"passive":[],
 
 				"effect":{
 					EFFECT_ATTR_CHANGE:[(Attr.ATTACK, 50, 0, 0)],
+					EFFECT_BUFF:(BuffType.AttackAttrCritUp, 100, 1),
 				}
 			},
 			{
 				"name":"冰枪术",
-				"text":"对目标造成20(+1.8自身攻击力)伤害",
+				"text":"对目标造成20(+1.5自身攻击力)伤害",
 				"tp_cost":30,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[],
 
 				"effect":{
-					EFFECT_HURT:(20, Attr.ATTACK, 0, 1.8, False)
+					EFFECT_HURT:(20, Attr.ATTACK, 0, 1.5, False)
 				}
 			},
 			{
 				"name":"宇宙苍蓝闪",
-				"text":"无视距离，对目标造成50(+2.5自身攻击力)伤害",
+				"text":"无视距离，对目标造成50(+2.2自身攻击力)伤害",
 				"tp_cost":70,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[0],
 
 				"effect":{
-					EFFECT_HURT:(50, Attr.ATTACK, 0, 2.5, False),
+					EFFECT_HURT:(50, Attr.ATTACK, 0, 2.2, False),
 				}
 			}
 		],
@@ -569,6 +588,7 @@ ROLE = {
 		"distance":7,
 		"attack":90,
 		"defensive":100,
+		"crit":0,
 		"tp":20,
 
 		"active_skills":[
@@ -593,7 +613,7 @@ ROLE = {
 				"effect":{
 					EFFECT_ATTR_CHANGE:[
 						(Attr.DEFENSIVE, -50, 0, 0),
-						(Attr.TP, -50, 0, 0)],
+						(Attr.NOW_TP, -50, 0, 0)],
 				},
 			},
 			{
@@ -606,7 +626,7 @@ ROLE = {
 				"effect":{
 					EFFECT_ATTR_CHANGE:[
 						(Attr.NOW_HEALTH, 0, Attr.DEFENSIVE, 0.7),
-						(Attr.TP, 50, 0, 0)],
+						(Attr.NOW_TP, 50, 0, 0)],
 				},
 			},
 			{
@@ -640,6 +660,7 @@ ROLE = {
 		"distance":10,
 		"attack":120,
 		"defensive":50,
+		"crit":5,
 		"tp":0,
 
 
@@ -665,7 +686,7 @@ ROLE = {
 				"effect":{
 					EFFECT_ATTR_CHANGE:[
 						(Attr.ATTACK, 50, 0, 0),
-						(Attr.TP, 30, 0, 0),
+						(Attr.NOW_TP, 30, 0, 0),
 						(Attr.NOW_HEALTH, -100, 0, 0,)],
 				}
 			},
@@ -703,6 +724,7 @@ ROLE = {
 		"distance":5,
 		"attack":110,
 		"defensive":80,
+		"crit":5,
 		"tp":0,
 
 		"active_skills" : [
@@ -770,6 +792,7 @@ ROLE = {
 		"distance":10,
 		"attack":100,
 		"defensive":50,
+		"crit":5,
 		"tp":0,
 
 		"active_skills" : [
@@ -829,6 +852,7 @@ ROLE = {
 		"distance":10,
 		"attack":100,
 		"defensive":150,
+		"crit":10,
 		"tp":0,
 
 		"active_skills" : [
@@ -887,6 +911,7 @@ ROLE = {
 		"distance":5,
 		"attack":100,
 		"defensive":70,
+		"crit":5,
 		"tp":0,
 
 		"active_skills" : [
@@ -945,6 +970,7 @@ ROLE = {
 		"distance":8,
 		"attack":80,
 		"defensive":60,
+		"crit":0,
 		"tp":10,
 
 		"active_skills" : [
@@ -961,7 +987,7 @@ ROLE = {
 			},
 			{
 				"name":"花瓣射击",
-				"text":"对目标造成100(+1.5自身攻击力)伤害，并降低目标10点攻击力和10点TP",
+				"text":"对目标造成100(+1.5自身攻击力)伤害，并降低目标20点攻击力和10点TP",
 				"tp_cost":20,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[],
@@ -969,8 +995,8 @@ ROLE = {
 				"effect":{
 					EFFECT_HURT:(100, Attr.ATTACK, 0, 1.5, False),
 					EFFECT_ATTR_CHANGE:[
-						(Attr.ATTACK, -10, 0, 0),
-						(Attr.TP, -10, 0, 0)],
+						(Attr.ATTACK, -20, 0, 0),
+						(Attr.NOW_TP, -10, 0, 0)],
 				}
 			},
 			{
@@ -1006,6 +1032,7 @@ ROLE = {
 		"distance":5,
 		"attack":100,
 		"defensive":60,
+		"crit":10,
 		"tp":0,
 
 		"active_skills" : [

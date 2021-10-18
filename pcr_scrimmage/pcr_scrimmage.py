@@ -111,8 +111,10 @@ NOW_STAGE_SKILL = 2 #释放技能
 NOW_STAGE_OUT	= 3 #出局
 
 MAX_PLAYER = 4		#最大玩家数量
+MAX_CRIT = 100		#最大暴击
 MAX_TP = 100		#tp值上限
 MAX_DIST = 15		#最大攻击距离
+
 ONE_ROUND_TP = 10	#单回合获得tp量
 ROUND_DISTANCE = 2	#每隔x回合增加的攻击距离(x为当前存活人数)
 ROUND_ATTACK = 10	#每隔x回合增加的攻击力
@@ -181,7 +183,9 @@ class Role:
 			self.attr[Attr.DISTANCE] = role_data['distance']
 			self.attr[Attr.ATTACK] = role_data['attack']
 			self.attr[Attr.DEFENSIVE] = role_data['defensive']
-			self.attr[Attr.TP] = role_data['tp']
+			self.attr[Attr.CRIT] = role_data['crit']
+			self.attr[Attr.NOW_TP] = role_data['tp']
+			self.attr[Attr.MAX_TP] = MAX_TP
 
 			self.active_skills = role_data['active_skills']
 			self.passive_skills = role_data['passive_skills']
@@ -195,20 +199,25 @@ class Role:
 		if attr_type == Attr.NOW_HEALTH and num < 0:
 			#如果生命值减少，则按百分比回复tp
 			hurt_tp = math.floor(abs(num) / self.attr[Attr.MAX_HEALTH] * 100 / 2)
-			self.attrChange(Attr.TP, hurt_tp)
+			self.attrChange(Attr.NOW_TP, hurt_tp)
 
 		self.attr[attr_type] += num
 
 		#属性数值改变后的处理
-		if attr_type == Attr.NOW_HEALTH and self.attr[Attr.NOW_HEALTH] > self.attr[Attr.MAX_HEALTH]:
+		if ((attr_type == Attr.NOW_HEALTH or attr_type == Attr.MAX_HEALTH) and 
+			self.attr[Attr.NOW_HEALTH] > self.attr[Attr.MAX_HEALTH]):
 			#当前生命值不能超过最大生命值
 			self.attr[Attr.NOW_HEALTH] = self.attr[Attr.MAX_HEALTH]
+		if ((attr_type == Attr.NOW_TP or attr_type == Attr.MAX_TP) and 
+			self.attr[Attr.NOW_TP] > self.attr[Attr.MAX_TP]):
+			#不能超过最大tp
+			self.attr[Attr.NOW_TP] = self.attr[Attr.MAX_TP]
 		if attr_type == Attr.DISTANCE and self.attr[Attr.DISTANCE] > MAX_DIST:
 			#不能超过最大攻击距离
 			self.attr[Attr.DISTANCE] = MAX_DIST
-		if attr_type == Attr.TP and self.attr[Attr.TP] > MAX_TP:
-			#不能超过最大tp
-			self.attr[Attr.TP] = MAX_TP
+		if attr_type == Attr.CRIT and self.attr[Attr.CRIT] > MAX_CRIT:
+			#不能超过最大暴击
+			self.attr[Attr.CRIT] = MAX_CRIT
 
 		if self.attr[attr_type] <= 0:
 			self.attr[attr_type] = 0
@@ -256,7 +265,8 @@ class Role:
 		if effect_type == BuffEffectType.Attr:
 			attr_type = Buff[buff_type]['attr_type']
 			if (trigger_type == BuffTriggerType.Normal or 
-				trigger_type == BuffTriggerType.NormalSelf):
+				trigger_type == BuffTriggerType.NormalSelf or 
+				trigger_type == BuffTriggerType.Attack):
 				if info[2] == 0:
 					self.attrChange(attr_type, info[0])
 					info[2] = 1
@@ -269,7 +279,8 @@ class Role:
 		
 		if info[1] <= 0 : 
 			if (trigger_type == BuffTriggerType.Normal or 
-				trigger_type == BuffTriggerType.NormalSelf):
+				trigger_type == BuffTriggerType.NormalSelf or 
+				trigger_type == BuffTriggerType.Attack):
 				self.attrChange(attr_type, -info[0])
 			del self.buff[trigger_type][effect_type][buff_type]
 		else:
@@ -286,10 +297,11 @@ class Role:
 			f"玩家：{uid2card(self.user_id, scrimmage.user_card_dict)}",
 			f"角色：{self.name}",
 			f"生命值：{self.attr[Attr.NOW_HEALTH]}/{self.attr[Attr.MAX_HEALTH]}",
-			f"TP：{self.attr[Attr.TP]}",
+			f"TP：{self.attr[Attr.NOW_TP]}",
 			f"攻击距离：{self.attr[Attr.DISTANCE]}",
 			f"攻击力：{self.attr[Attr.ATTACK]}",
 			f"防御力：{self.attr[Attr.DEFENSIVE]}",
+			f"暴击率：{self.attr[Attr.CRIT]}%",
 			f'位置：{self.now_location}'
 		]
 		if len(self.buff) != 0:
@@ -476,7 +488,7 @@ class PCRScrimmage:
 		player.locationChange(step, self.runway)
 
 		for iter_player_id in self.now_playing_players:	#每丢1次色子为一个回合
-			self.getPlayerObj(iter_player_id).attrChange(Attr.TP, ONE_ROUND_TP)
+			self.getPlayerObj(iter_player_id).attrChange(Attr.NOW_TP, ONE_ROUND_TP)
 			self.getPlayerObj(iter_player_id).buffTrigger(BuffTriggerType.Normal)
 			self.getPlayerObj(iter_player_id).buffTrigger(BuffTriggerType.Turn)
 
@@ -511,7 +523,7 @@ class PCRScrimmage:
 		elif case_num == CASE_TP:
 			numRange = RUNWAY_CASE[CASE_TP]["range"]
 			num = random.choice(range(numRange[0],numRange[1]))
-			player.attrChange(Attr.TP, num)
+			player.attrChange(Attr.NOW_TP, num)
 		elif case_num == CASE_MOVE:
 			numRange = RUNWAY_CASE[CASE_MOVE]["range"]
 			num = random.choice(range(numRange[0],numRange[1]))
@@ -562,12 +574,12 @@ class PCRScrimmage:
 			real_skill_id = skill_id - 1	#实际技能id
 			skill = use_player_obj.active_skills[real_skill_id]
 			skill_tp_cost = skill["tp_cost"]			#tp消耗
-			if skill_tp_cost > use_player_obj.attr[Attr.TP]:		#检查tp是否足够
+			if skill_tp_cost > use_player_obj.attr[Attr.NOW_TP]:		#检查tp是否足够
 				await bot.send(ev, 'tp不足，无法使用这个技能')
 				return RET_ERROR
 			
 			#先扣除tp
-			use_player_obj.attrChange(Attr.TP, -skill_tp_cost)
+			use_player_obj.attrChange(Attr.NOW_TP, -skill_tp_cost)
 			
 			use_player_name = uid2card(use_player_obj.user_id, self.user_card_dict)
 			use_skill_nale = use_player_obj.active_skills[real_skill_id]["name"]
@@ -578,7 +590,7 @@ class PCRScrimmage:
 			if ret == RET_ERROR:
 				await bot.send(ev, msg)
 				#技能释放失败，返还tp
-				use_player_obj.attrChange(Attr.TP, skill_tp_cost)
+				use_player_obj.attrChange(Attr.NOW_TP, skill_tp_cost)
 				return ret
 			await bot.send(ev, '\n'.join(back_msg))
 			
@@ -748,18 +760,18 @@ class PCRScrimmage:
 		
 		#造成伤害
 		if EFFECT_HURT in skill_effect:
-			num = self.hurtCalculate(skill_effect, use_skill_player, goal_player, back_msg)
+			num, crit_flag = self.hurtCalculate(skill_effect, use_skill_player, goal_player, back_msg)
 			num = goal_player.beHurt(num)
-			back_msg.append(f'{goal_player_name}受到了{abs(num)}点伤害')
+			back_msg.append(f'{crit_flag and "暴击！" or ""}{goal_player_name}受到了{abs(num)}点伤害')
 			if goal_player.now_stage == NOW_STAGE_OUT:
-				use_skill_player.attrChange(Attr.TP, HIT_DOWN_TP)#击倒回复tp
+				use_skill_player.attrChange(Attr.NOW_TP, HIT_DOWN_TP)#击倒回复tp
 				back_msg.append(f'[CQ:at,qq={goal_player.user_id}]出局')
 
 		#效果击倒tp
 		if EFFECT_OUT_TP in skill_effect:
 			if goal_player.now_stage == NOW_STAGE_OUT:
 				num = skill_effect[EFFECT_OUT_TP]
-				use_skill_player.attrChange(Attr.TP, num)
+				use_skill_player.attrChange(Attr.NOW_TP, num)
 				if num < 0:
 					back_msg.append(f'{goal_player_name}被击倒，{use_player_name}降低了{abs(num)}点TP')
 				else:
@@ -791,8 +803,13 @@ class PCRScrimmage:
 		addition_prop = skill_effect[EFFECT_HURT][3]					#加成比例
 		is_real 	  = skill_effect[EFFECT_HURT][4]					#是否是真实伤害
 
-		if addition_type != 0 and addition_prop != 0 :
-			num = num + addition_goal.attr[addition_type] * addition_prop	#计算加成后的数值
+		self.getPlayerObj(use_skill_player.user_id).buffTrigger(BuffTriggerType.Attack)
+		crit_flag = random.choice(range(0, MAX_CRIT)) < use_skill_player.attr[Attr.CRIT]
+
+		if addition_type != 0 and addition_prop != 0 :				#计算加成后的数值
+			num = num + addition_goal.attr[addition_type] * addition_prop	
+		if use_skill_player.attr[Attr.CRIT] != 0 and crit_flag:		#计算暴击
+			num *= 2
 		if not is_real:#如果是真实伤害则不计算目标的防御
 			goal_player_def = goal_player.attr[Attr.DEFENSIVE]		#目标防御力
 			num = hurt_defensive_calculate(num, goal_player_def)	#计算目标防御力后的数值
@@ -814,7 +831,7 @@ class PCRScrimmage:
 
 		num = math.floor(num)	#小数数值向下取整
 		num = 0 - num			#变回负数，代表扣血
-		return num
+		return num, crit_flag
 
 
 	#阶段提醒，丢色子/放技能阶段
@@ -903,12 +920,12 @@ class PCRScrimmage:
 
 			player = self.getPlayerObj(player_id)
 			health_line_length = 96 * (player.attr[Attr.NOW_HEALTH] / player.attr[Attr.MAX_HEALTH])
-			tp_line_length = 96 * (player.attr[Attr.TP] / MAX_TP)
+			tp_line_length = 96 * (player.attr[Attr.NOW_TP] / player.attr[Attr.MAX_TP])
 
 			self.statuLineFill(health_line_length, offset_x, offset_y, -16, COLOR_CAM_GREEN)	#血条填充
 			self.statuLineFill(tp_line_length, offset_x, offset_y, 1, COLOR_CAM_BLUE)			#tp条填充
 			self.roleStatuText(offset_x, offset_y, -23, text = str(player.attr[Attr.NOW_HEALTH]) )			#血条数值
-			self.roleStatuText(offset_x, offset_y, -5, text = str(player.attr[Attr.TP]))					#tp条数值
+			self.roleStatuText(offset_x, offset_y, -5, text = str(player.attr[Attr.NOW_TP]))					#tp条数值
 			self.playerInfoText(offset_x, offset_y, 28,text = f'dist   ：{player.attr[Attr.DISTANCE]}')		#攻击距离
 			self.playerInfoText(offset_x, offset_y, 12,text = f'name：{uid2card(player.user_id, self.user_card_dict)}')#玩家名字
 			
@@ -1173,7 +1190,7 @@ async def throw_dice(bot, ev: CQEvent):
 	if scrimmage.getPlayerObj(uid).now_stage != NOW_STAGE_DICE:
 		return
 
-	step = random.choice(range(1,6))
+	step = random.choice(range(1,9))
 	await bot.send(ev, '色子结果为：' + str(step))
 	await scrimmage.throwDice(uid, step, bot, ev)
 	scrimmage.refreshNowImageStatu()
@@ -1262,6 +1279,8 @@ async def check_property(bot, ev: CQEvent):
 	scrimmage = mgr.get_game(gid)
 	if not scrimmage  or scrimmage.now_statu != NOW_STATU_OPEN:
 		return
+	if uid not in scrimmage.player_list:
+		return
 	player = scrimmage.getPlayerObj(uid)
 	msg = player.checkStatu(scrimmage)
 	await bot.send(ev, "\n".join(msg))
@@ -1282,6 +1301,7 @@ async def check_role(bot, ev: CQEvent):
 		msg.append(f"攻击距离：{role_info['distance']}")
 		msg.append(f"攻击力：{role_info['attack']}")
 		msg.append(f"防御力：{role_info['defensive']}")
+		msg.append(f"暴击率：{role_info['crit'] > MAX_CRIT and MAX_CRIT or role_info['crit']}%")
 		msg.append(f"技能：")
 		for skill in role_info['active_skills']:
 			msg.append(f"{skill['name']}({skill['tp_cost']}tp)：{skill['text']}")
@@ -1342,9 +1362,13 @@ async def game_help_all_role(bot, ev: CQEvent):
 2、可多个玩家同时玩，最多4个，最少2个。每个玩家可选择一个pcr里的角色，不同的角色有不同的属性、技能
 3、角色有tp值，可用来释放技能。每次投掷色子，所有玩家都会增加tp值，受到伤害也会增加tp值
 4、需要选择目标的技能释放范围可能有距离限制，以角色属性的攻击距离为准
-5、避免游戏时长过长，每(场上玩家数量)回合增加一次攻击力和攻击距离
+5、避免游戏时长过长，每(场上玩家数量)个玩家回合增加一次攻击力和攻击距离
 6、可投降
 7、活到最后获胜（吃鸡？）
+
+--回合机制：
+玩家回合：当前默认的回合机制，每个玩家丢一次色子为经过一回合
+自我回合：另一种回合机制，每次轮到自己后才为经过一回合
 '''
 	await bot.send(ev, msg)
 

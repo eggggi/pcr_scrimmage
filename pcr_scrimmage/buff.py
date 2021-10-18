@@ -1,8 +1,8 @@
 # buff会一直保存在玩家身上，达到触发条件时扣除触发次数，次数扣完后删除
 # buff结构 (BuffType.xx, 数值, 可触发次数)
 
-###### 当前默认的回合机制，是每个玩家丢一次色子为经过一回合
-######
+###### 当前默认的回合机制，是每个玩家丢一次色子为经过一回合	（简称 玩家回合）
+###### 另一种回合机制，是每次轮到自己后才为经过一回合		（简称 自我回合）
 
 from enum import IntEnum
 from .attr import Attr
@@ -15,6 +15,8 @@ class BuffTriggerType(IntEnum):
 						#简单来说就是被 EFFECT_HURT 触发的
 	NormalSelf	= 4		#Normal 的自我回合版，轮到自己才算经过一回合
 	TurnSelf	= 5		#Turn 的自我回合版，轮到自己才算经过一回合
+	Attack		= 6		#主动攻击时触发型buff
+						#当释放一个含有 EFFECT_HURT 的技能时触发
 
 #buff效果类型
 class BuffEffectType(IntEnum):
@@ -36,10 +38,12 @@ class BuffType(IntEnum):
 
 	Shield				= 30201
 
+	AttackAttrCritUp	= 60101
+
 Buff = {
 	BuffType.NormalAttrAtkUp:{
 		'name':'强化',
-		'text':'增加{0}点攻击力，持续{1}回合',
+		'text':'增加{0}点攻击力，持续{1}个玩家回合',
 		'trigger_type':BuffTriggerType.Normal,
 		'effect_type':BuffEffectType.Attr,
 
@@ -47,7 +51,7 @@ Buff = {
 	},
 	BuffType.NormalAttrAtkDown:{
 		'name':'虚弱',
-		'text':'降低{0}点攻击力，持续{1}回合',
+		'text':'降低{0}点攻击力，持续{1}个玩家回合',
 		'trigger_type':BuffTriggerType.Normal,
 		'effect_type':BuffEffectType.Attr,
 
@@ -55,7 +59,7 @@ Buff = {
 	},
 	BuffType.NormalAttrDefUp:{
 		'name':'守护',
-		'text':'增加{0}点防御力，持续{1}回合',
+		'text':'增加{0}点防御力，持续{1}个玩家回合',
 		'trigger_type':BuffTriggerType.Normal,
 		'effect_type':BuffEffectType.Attr,
 
@@ -64,7 +68,7 @@ Buff = {
 
 	BuffType.TurnAttrAtkUp:{
 		'name':'越战越勇',
-		'text':'每回合永久增加{0}点攻击力，持续{1}回合',
+		'text':'每回合永久增加{0}点攻击力，持续{1}个玩家回合',
 		'trigger_type':BuffTriggerType.Turn,
 		'effect_type':BuffEffectType.Attr,
 
@@ -72,7 +76,7 @@ Buff = {
 	},
 	BuffType.TurnAttrAtkDown:{
 		'name':'极度虚弱',
-		'text':'每回合永久降低{0}点攻击力，持续{1}回合',
+		'text':'每回合永久降低{0}点攻击力，持续{1}个玩家回合',
 		'trigger_type':BuffTriggerType.Turn,
 		'effect_type':BuffEffectType.Attr,
 
@@ -80,9 +84,10 @@ Buff = {
 	},
 	BuffType.TurnAttrHelDown:{
 		'name':'中毒',
-		'text':'每回合降低{0}点生命值，持续{1}回合',
+		'text':'每回合降低{0}点生命值，持续{1}个玩家回合',
 		'trigger_type':BuffTriggerType.Turn,
 		'effect_type':BuffEffectType.Attr,
+
 		'attr_type':Attr.NOW_HEALTH,
 	},
 
@@ -91,5 +96,14 @@ Buff = {
 		'text':'增加一个能承受{0}伤害的护盾，可触发{1}次',
 		'trigger_type':BuffTriggerType.Hurt,
 		'effect_type':BuffEffectType.Shield,
+	},
+
+	BuffType.AttackAttrCritUp:{
+		'name':'一鼓作气',
+		'text':'下次攻击增加{0}%暴击率，可触发{1}次',
+		'trigger_type':BuffTriggerType.Attack,
+		'effect_type':BuffEffectType.Attr,
+
+		'attr_type':Attr.CRIT,
 	},
 }

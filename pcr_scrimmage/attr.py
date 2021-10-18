@@ -6,7 +6,9 @@ class Attr(IntEnum):
 	MAX_HEALTH		= 3	#最大生命值
 	NOW_HEALTH		= 4	#当前生命值
 	DISTANCE		= 5	#攻击距离
-	TP				= 6	#tp
+	NOW_TP			= 6	#当前tp
+	MAX_TP			= 7 #最大tp
+	CRIT			= 8	#暴击
 
 def AttrTextChange(attr_type):
 	if attr_type == Attr.ATTACK:
@@ -19,5 +21,9 @@ def AttrTextChange(attr_type):
 		return "生命值"
 	elif attr_type == Attr.DISTANCE:
 		return "攻击距离"
-	elif attr_type == Attr.TP:
-		return "tp值"
+	elif attr_type == Attr.NOW_TP:
+		return "TP"
+	elif attr_type == Attr.MAX_TP:
+		return "最大TP"
+	elif attr_type == Attr.CRIT:
+		return "暴击"
