@@ -188,12 +188,12 @@ ROLE = {
 			},
 			{
 				"name":"光之守护",
-				"text":"增加200点防御力，持续4个玩家回合",
+				"text":"增加500点防御力，持续4个玩家回合",
 				"tp_cost":20,
 				"trigger": TRIGGER_ME,
 				"passive":[],
 				"effect":{
-					EFFECT_BUFF:(BuffType.NormalAttrDefUp, 200, 4),
+					EFFECT_BUFF:(BuffType.NormalAttrDefUp, 500, 4),
 				}
 			},
 			{
@@ -492,7 +492,7 @@ ROLE = {
 			},
 			{
 				"name":"附魔之箭",
-				"text":"对目标造成120(+1.5自身攻击力)伤害,并提升自身80攻击力",
+				"text":"对目标造成120(+1.5自身攻击力)伤害,并提升自身50攻击力",
 				"tp_cost":100,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[1],
@@ -512,7 +512,7 @@ ROLE = {
 				{
 				"trigger": TRIGGER_ME,
 				"effect":{
-					EFFECT_ATTR_CHANGE:[(Attr.ATTACK, 80, 0, 0)]
+					EFFECT_ATTR_CHANGE:[(Attr.ATTACK, 50, 0, 0)]
 					}
 				}
 		]
@@ -540,14 +540,14 @@ ROLE = {
 			},
 			{
 				"name":"魔法增幅",
-				"text":"自身增加50点攻击力, 且下次攻击增加50%暴击概率",
+				"text":"自身增加50点攻击力, 且下次攻击增加70%暴击概率",
 				"tp_cost":20,
 				"trigger": TRIGGER_ME,
 				"passive":[],
 
 				"effect":{
 					EFFECT_ATTR_CHANGE:[(Attr.ATTACK, 50, 0, 0)],
-					EFFECT_BUFF:(BuffType.AttackAttrCritUp, 100, 1),
+					EFFECT_BUFF:(BuffType.AttackAttrCritUp, 70, 1),
 				}
 			},
 			{
@@ -741,26 +741,26 @@ ROLE = {
 			},
 			{
 				"name":"蹦蹦跳跳",
-				"text":"自身增加20点攻击力和20点防御力",
+				"text":"自身增加30点攻击力和30点防御力",
 				"tp_cost":20,
 				"trigger": TRIGGER_ME,
 				"passive":[],
 
 				"effect":{
 					EFFECT_ATTR_CHANGE:[
-						(Attr.ATTACK, 20, 0, 0),
-						(Attr.DEFENSIVE, 20, 0, 0)],
+						(Attr.ATTACK, 30, 0, 0),
+						(Attr.DEFENSIVE, 30, 0, 0)],
 				}
 			},
 			{
 				"name":"崩山击",
-				"text":"向目标移动3格，并对目标及其半径5范围内的所有玩家造成100(+0.9自身攻击力)伤害",
+				"text":"向目标移动3格，并对目标及其半径5范围内的所有玩家造成100(+1.0自身攻击力)伤害",
 				"tp_cost":30,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[0],
 
 				"effect":{
-					EFFECT_HURT:(100, Attr.ATTACK, 0, 0.9, False),
+					EFFECT_HURT:(100, Attr.ATTACK, 0, 1.0, False),
 					EFFECT_AOE:(5, False)
 				}
 			},
