@@ -398,7 +398,7 @@ ROLE = {
 			{
 				"name":"血腥爆破",
 				"text":"对目标造成100(+1.0自身攻击力)的伤害,并提升自身25攻击力,对自身造成100(+0.1攻击力)伤害",
-				"tp_cost":0,
+				"tp_cost":20,
 				"trigger":TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[0,1],
 
