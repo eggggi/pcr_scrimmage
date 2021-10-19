@@ -38,6 +38,8 @@ class BuffType(IntEnum):
 
 	Shield				= 30201
 
+	TurnSelfAttrCritUp	= 50101
+
 	AttackAttrCritUp	= 60101
 
 Buff = {
@@ -96,6 +98,15 @@ Buff = {
 		'text':'增加一个能承受{0}伤害的护盾，可触发{1}次',
 		'trigger_type':BuffTriggerType.Hurt,
 		'effect_type':BuffEffectType.Shield,
+	},
+
+	BuffType.TurnSelfAttrCritUp:{#暴击弓专属buff
+		'name':'魅力全开',
+		'text':'每自我回合增加{0}%暴击率，持续全场',
+		'trigger_type':BuffTriggerType.TurnSelf,
+		'effect_type':BuffEffectType.Attr,
+
+		'attr_type':Attr.CRIT,
 	},
 
 	BuffType.AttackAttrCritUp:{

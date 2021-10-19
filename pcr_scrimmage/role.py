@@ -587,40 +587,39 @@ ROLE = {
 		"health":1200,
 		"distance":7,
 		"attack":90,
-		"defensive":100,
+		"defensive":150,
 		"crit":0,
 		"tp":20,
 
 		"active_skills":[
 			{
-				"name":"普通攻击",
-				"text":"对目标造成0(+1.0自身攻击力)伤害",
+				"name":"肉蛋葱鸡",
+				"text":"向离自己最近的目标移动3步，并对目标造成0(+1.5自身防御力)伤害",
 				"tp_cost":0,
-				"trigger": TRIGGER_SELECT_EXCEPT_ME,
-				"passive":[],
+				"trigger": TRIGGER_NEAR,
+				"passive":[0],
 
 				"effect":{
-					EFFECT_HURT:(0, Attr.ATTACK, 0, 1, False)
+					EFFECT_HURT:(0, Attr.DEFENSIVE, 0, 1.5, False)
 				}
 			},
 			{
-				"name":"淡薄圆月",
-				"text":"降低目标50防御和50TP",
-				"tp_cost":30,
-				"trigger":TRIGGER_SELECT_EXCEPT_ME,
+				"name":"护盾",
+				"text":"为自己增加一个200点生命值的护盾（只可触发1次），并增加20点防御力",
+				"tp_cost":20,
+				"trigger": TRIGGER_ME,
 				"passive":[],
-				
+
 				"effect":{
-					EFFECT_ATTR_CHANGE:[
-						(Attr.DEFENSIVE, -50, 0, 0),
-						(Attr.NOW_TP, -50, 0, 0)],
-				},
+					EFFECT_BUFF:(BuffType.Shield, 200, 1),
+					EFFECT_ATTR_CHANGE:[(Attr.DEFENSIVE, 20, 0, 0)],
+				}
 			},
 			{
 				"name":"月下独酌",
-				"text":"恢复目标50TP,恢复目标根据自身防御力70%的生命值",
-				"tp_cost":50,
-				"trigger":TRIGGER_SELECT,
+				"text":"自身增加30TP, 并恢复自身防御力70%的生命值",
+				"tp_cost":20,
+				"trigger":TRIGGER_ME,
 				"passive":[],
 				
 				"effect":{
@@ -634,7 +633,7 @@ ROLE = {
 				"text":"提升全体100防御,回复全体根据自身防御90%生命值,自身额外提升50防御和100生命值",
 				"tp_cost":70,
 				"trigger":TRIGGER_ALL,
-				"passive":[0],
+				"passive":[1],
 
 				"effect":{
 					EFFECT_ATTR_CHANGE:[
@@ -644,6 +643,12 @@ ROLE = {
 			}
 		],
 		"passive_skills":[
+			{
+				"trigger": TRIGGER_SELECT_EXCEPT_ME,
+				"effect":{
+					EFFECT_MOVE_GOAL:(3, False),
+				}
+			},
 			{
 				"trigger": TRIGGER_ME,
 				"effect":{
@@ -785,6 +790,63 @@ ROLE = {
 				}
 			}
 		]
+	},
+	1016:{
+		"name":"玲奈",
+		"health":900,
+		"distance":12,
+		"attack":100,
+		"defensive":50,
+		"crit":10,
+		"tp":0,
+
+		"active_skills" : [
+			{
+				"name":"普通攻击",
+				"text":"对目标造成0(+1.0自身攻击力)伤害",
+				"tp_cost":10,
+				"trigger": TRIGGER_SELECT_EXCEPT_ME,
+				"passive":[],
+
+				"effect":{
+					EFFECT_HURT:(0, Attr.ATTACK, 0, 1, False)
+				}
+			},
+			{
+				"name":"魅力全开",
+				"text":"每自我回合增加10%暴击率，持续全局",
+				"tp_cost":0,
+				"trigger": TRIGGER_ME,
+				"passive":[],
+
+				"effect":{
+					EFFECT_BUFF:(BuffType.TurnSelfAttrCritUp, 10, 9999),
+				}
+			},
+			{
+				"name":"会心飞镖",
+				"text":"对目标造成100(+1.0自身攻击力)伤害",
+				"tp_cost":20,
+				"trigger": TRIGGER_SELECT_EXCEPT_ME,
+				"passive":[],
+
+				"effect":{
+					EFFECT_HURT:(100, Attr.ATTACK, 0, 1.0, False)
+				}
+			},
+			{
+				"name":"一箭穿心",
+				"text":"对目标造成200(+2.0自身攻击力)伤害",
+				"tp_cost":60,
+				"trigger": TRIGGER_SELECT_EXCEPT_ME,
+				"passive":[],
+
+				"effect":{
+					EFFECT_HURT:(200, Attr.ATTACK, 0, 2.0, True)
+				}
+			},
+		],
+		"passive_skills": []
 	},
 	1006:{
 		"name":"茜里",
