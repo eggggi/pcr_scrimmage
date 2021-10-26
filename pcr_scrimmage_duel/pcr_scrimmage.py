@@ -32,7 +32,7 @@ from .attr import Attr, AttrTextChange
 from .buff import BuffEffectType, BuffTriggerType, Buff
 from .runway_case import (CASE_NONE, CASE_ATTACK, CASE_DEFENSIVE, CASE_HEALTH, 
 						  CASE_MOVE, CASE_TP, RUNWAY_CASE)
-from .role import (EFFECT_BUFF, ROLE, EFFECT_LOCKTURN,
+from .role import (EFFECT_BUFF, EFFECT_BUFF_TRIGGER, EFFECT_HIT_BACK, EFFECT_SKILL_CHANGE, ROLE, EFFECT_LOCKTURN,
 				   EFFECT_HURT, EFFECT_ATTR_CHANGE, EFFECT_MOVE, EFFECT_MOVE_GOAL, EFFECT_LIFESTEAL,
 				   EFFECT_OUT_TP, EFFECT_OUT_LOCKTURN, EFFECT_IGNORE_DIST, EFFECT_AOE, EFFECT_ELIMINATE,
 				   TRIGGER_ME, TRIGGER_ALL_EXCEPT_ME, TRIGGER_ALL, TRIGGER_SELECT, TRIGGER_SELECT_EXCEPT_ME, TRIGGER_NEAR)
@@ -206,6 +206,12 @@ class Role:
 		self.attr[attr_type] += num
 
 		#属性数值改变后的处理
+		if attr_type == Attr.MAX_HEALTH and num > 0 :
+			#如果增加的是生命最大值，则当前生命也增加同等数值
+			self.attr[Attr.NOW_HEALTH] += num
+		if attr_type == Attr.MAX_TP and num > 0:
+			#如果增加的是tp最大值，则当前tp也增加同等数值
+			self.attr[Attr.NOW_TP] += num
 		if ((attr_type == Attr.NOW_HEALTH or attr_type == Attr.MAX_HEALTH) and 
 			self.attr[Attr.NOW_HEALTH] > self.attr[Attr.MAX_HEALTH]):
 			#当前生命值不能超过最大生命值
@@ -231,11 +237,13 @@ class Role:
 		if self.now_stage == NOW_STAGE_OUT: return
 		runway[self.now_location]["players"].remove(self.user_id)
 		self.now_location += num
-		if self.now_location >= len(runway):
-			self.now_location -= len(runway)
-		elif self.now_location < 0:
-			self.now_location = len(runway) + self.now_location
+		while(self.now_location >= len(runway) or self.now_location < 0):
+			if self.now_location >= len(runway):
+				self.now_location -= len(runway)
+			elif self.now_location < 0:
+				self.now_location += len(runway)
 		runway[self.now_location]["players"].append(self.user_id)
+
 	#状态改变
 	def stageChange(self, stage):
 		self.now_stage = stage
@@ -312,7 +320,7 @@ class Role:
 				for _, buff_infos in buff_effect_infos.items():
 					for buff_type, info in buff_infos.items():
 						buff_text:str = Buff[buff_type]['text']
-						buff_text = buff_text.format(info[0], info[1] == 0 and 1 or info[1])
+						buff_text = buff_text.format(abs(info[0]), info[1] == 0 and 1 or (info[1] > 10000 and "无限" or info[1]))
 						msg.append(f'{Buff[buff_type]["name"]}:{buff_text}')
 		return msg
 
@@ -610,6 +618,21 @@ class PCRScrimmage:
 		skill_trigger = skill["trigger"]						#技能的触发对象
 		skill_effect = skill["effect"]							#技能效果
 		
+		#这个技能有两套技能组
+		if EFFECT_SKILL_CHANGE in skill_effect:
+			buff_type = skill_effect[EFFECT_SKILL_CHANGE][0]
+			new_skill_goal = skill_effect[EFFECT_SKILL_CHANGE][1]
+			buff_trigger_type = Buff[buff_type]['trigger_type']
+			buff_effeffect_type =  Buff[buff_type]['effect_type']
+			if (buff_trigger_type in use_skill_player.buff and
+				buff_effeffect_type in use_skill_player.buff[buff_trigger_type] and 
+				buff_type in use_skill_player.buff[buff_trigger_type][buff_effeffect_type]):
+				for skill_id in new_skill_goal :
+					ret, msg = self.skillTrigger(use_skill_player, goal_player_id, skill_id, True, back_msg)
+					if ret == RET_ERROR : return ret, msg
+				return RET_SCUESS, ''
+
+		
 		#选择触发对象
 		if skill_trigger == TRIGGER_SELECT or skill_trigger == TRIGGER_SELECT_EXCEPT_ME:
 			if goal_player_id > 0:
@@ -722,6 +745,26 @@ class PCRScrimmage:
 					use_skill_player.locationChange(-num, self.runway)
 			back_msg.append(f'{use_player_name}往离{goal_player_name}较近的方向移动了{num}步')
 
+		#击退/拉近
+		if EFFECT_HIT_BACK in skill_effect:
+			num = skill_effect[EFFECT_HIT_BACK]
+			distance = use_skill_player.now_location - goal_player.now_location
+			half_circle = len(self.runway) / 2
+			if distance > 0:
+				if distance > half_circle:
+					goal_player.locationChange(num, self.runway)
+				else:
+					goal_player.locationChange(-num, self.runway)
+			else:
+				if abs(distance) < half_circle:
+					goal_player.locationChange(num, self.runway)
+				else:
+					goal_player.locationChange(-num, self.runway)
+			if num > 0:
+				back_msg.append(f'{use_player_name}将{goal_player_name}击退了{num}步')
+			else:
+				back_msg.append(f'{use_player_name}将{goal_player_name}拉近了{num}步')
+
 		#位置改变
 		if EFFECT_MOVE in skill_effect:
 			num = skill_effect[EFFECT_MOVE]
@@ -730,6 +773,17 @@ class PCRScrimmage:
 				back_msg.append(f'{goal_player_name}后退了{abs(num)}步')
 			else:
 				back_msg.append(f'{goal_player_name}前进了{num}步')
+		
+		#buff效果
+		if EFFECT_BUFF in skill_effect:
+			for buff_info in skill_effect[EFFECT_BUFF]:
+				buff_name = Buff[buff_info[0]]['name']
+				buff_text:str = Buff[buff_info[0]]['text']
+				buff_text = buff_text.format(abs(buff_info[1]), buff_info[2] > 1000 and "无限" or buff_info[2] )
+				goal_player.addBuff(buff_info)
+				back_msg.append(f'{goal_player_name}获得buff《{buff_name}》，{buff_text}')
+			if EFFECT_BUFF_TRIGGER in skill_effect:
+				self.getPlayerObj(goal_player.user_id).buffTrigger(skill_effect[EFFECT_BUFF_TRIGGER])
 
 		#属性改变
 		if EFFECT_ATTR_CHANGE in skill_effect:
@@ -750,15 +804,6 @@ class PCRScrimmage:
 						back_msg.append(f'[CQ:at,qq={goal_player.user_id}]出局')
 				else:
 					back_msg.append(f'{goal_player_name}增加了{num}点{text}')
-		
-		#buff效果
-		if EFFECT_BUFF in skill_effect:
-			buff_info = skill_effect[EFFECT_BUFF]
-			buff_name = Buff[buff_info[0]]['name']
-			buff_text:str = Buff[buff_info[0]]['text']
-			buff_text = buff_text.format(buff_info[1], buff_info[2])
-			goal_player.addBuff(buff_info)
-			back_msg.append(f'{goal_player_name}获得buff《{buff_name}》，{buff_text}')
 		
 		#造成伤害
 		if EFFECT_HURT in skill_effect:
@@ -1312,8 +1357,10 @@ async def check_role(bot, ev: CQEvent):
 		msg.append(f"防御力：{role_info['defensive']}")
 		msg.append(f"暴击率：{role_info['crit'] > MAX_CRIT and MAX_CRIT or role_info['crit']}%")
 		msg.append(f"技能：")
+		skill_num = 0
 		for skill in role_info['active_skills']:
-			msg.append(f"{skill['name']}({skill['tp_cost']}tp)：{skill['text']}")
+			msg.append(f"  技能{skill_num + 1}：{skill['name']}({skill['tp_cost']}tp)：{skill['text']}")
+			skill_num += 1
 		return await bot.send(ev, "\n".join(msg))
 
 	await bot.send(ev, '不存在的角色')

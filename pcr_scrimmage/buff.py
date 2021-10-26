@@ -28,9 +28,14 @@ class BuffEffectType(IntEnum):
 # （其实遵不遵守这个规矩都可以，保证不会重复就行了）
 # （不过也不排除以后会根据这个规则做判断 _(:з)∠)_ ）
 class BuffType(IntEnum):
+	TenRouHaDanKen		= 100001	#天楼霸断剑特殊buff
+
 	NormalAttrAtkUp		= 10101
 	NormalAttrAtkDown	= 10102
 	NormalAttrDefUp		= 10103
+	NormalAttrMaxHelUp	= 10104
+	NormalAttrCritUp	= 10105
+	NormalAttrDefDown	= 10106
 
 	TurnAttrAtkUp		= 20101
 	TurnAttrAtkDown		= 20102
@@ -43,6 +48,15 @@ class BuffType(IntEnum):
 	AttackAttrCritUp	= 60101
 
 Buff = {
+	BuffType.TenRouHaDanKen:{
+		'name':'天楼霸断剑',
+		'text':'矛依未拔出了她的大剑，改变技能组，持续全场',
+		'trigger_type':BuffTriggerType.NormalSelf,
+		'effect_type':BuffEffectType.Attr,
+
+		'attr_type':Attr.MAX_TP,
+	},
+
 	BuffType.NormalAttrAtkUp:{
 		'name':'强化',
 		'text':'增加{0}点攻击力，持续{1}个玩家回合',
@@ -66,6 +80,30 @@ Buff = {
 		'effect_type':BuffEffectType.Attr,
 
 		'attr_type':Attr.DEFENSIVE,
+	},
+	BuffType.NormalAttrDefDown:{
+		'name':'破防',
+		'text':'降低{0}点防御力，持续{1}个玩家回合',
+		'trigger_type':BuffTriggerType.Normal,
+		'effect_type':BuffEffectType.Attr,
+
+		'attr_type':Attr.DEFENSIVE,
+	},
+	BuffType.NormalAttrMaxHelUp:{
+		'name':'强壮',
+		'text':'增加{0}点最大生命值，持续{1}个玩家回合',
+		'trigger_type':BuffTriggerType.Normal,
+		'effect_type':BuffEffectType.Attr,
+
+		'attr_type':Attr.MAX_HEALTH,
+	},
+	BuffType.NormalAttrCritUp:{
+		'name':'精准',
+		'text':'增加{0}%暴击率，持续{1}个玩家回合',
+		'trigger_type':BuffTriggerType.Normal,
+		'effect_type':BuffEffectType.Attr,
+
+		'attr_type':Attr.CRIT,
 	},
 
 	BuffType.TurnAttrAtkUp:{

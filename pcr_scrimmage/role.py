@@ -59,8 +59,9 @@ EFFECT_ELIMINATE = "eliminate"			#斩杀效果，目标生命值越低造成的�
 EFFECT_LIFESTEAL = "life_steal"			#生命偷取	float 伤害-生命值之间的转换比例
 										#EFFECT_LIFESTEAL需要EFFECT_HURT作为前置
 
-EFFECT_BUFF = "buff"					#buff效果	tuple元组 (BuffType.xx, 数值, 可触发次数)
-
+EFFECT_BUFF = "buff"					#buff效果		list[tuple,tuple] [(BuffType.xx, 数值, 可触发次数), (...)]
+EFFECT_BUFF_TRIGGER = "buff_trigger"	#buff效果触发	BuffTriggerType		立即触发指定触发类型的buff效果
+										#EFFECT_BUFF_TRIGGER需要EFFECT_BUFF作为前置
 EFFECT_ATTR_CHANGE = "attr"				#属性改变，正数为增加，负数为减少	list[tuple,tuple] [(属性类型，数值，加成类型，加成比例), (...)]
 										#属性类型/加成类型：attr.py , 为0时无加成
 
@@ -69,11 +70,14 @@ EFFECT_MOVE_GOAL = "move_goal"			#向目标移动（一个技能有多个效果�
 										#这个效果必须放在被动（不触发跑道事件）
 EFFECT_IGNORE_DIST = "ignore_dist"		#无视距离效果，参数随便填，不会用到
 										#这个效果必须放在被动
-EFFECT_AOE = "aoe"						#范围效果			tuple (半径范围, 是否对自己生效)
-EFFECT_LOCKTURN = "lock_turn"			#锁定回合			number	(不会切换到下一个玩家，当前玩家继续丢色子和放技能)
+EFFECT_AOE = "aoe"						#范围效果			tuple	(半径范围, 是否对自己生效)
+EFFECT_HIT_BACK = "hit_back"			#击退				number	填正数为击退x格子，负数为拉近
+EFFECT_LOCKTURN = "lock_turn"			#锁定回合			number	不会切换到下一个玩家，当前玩家继续丢色子和放技能
+EFFECT_SKILL_CHANGE = "skill_change"	#更改技能			tuple	(BuffType.xx, [被动技能编号1, 被动技能编号2])
+										#当自身存在某个特定buff时，技能效果替换为特定被动效果，原效果不触发
 
 EFFECT_OUT_TP = "make_it_out_tp"		#令目标出局时tp变动		number
-EFFECT_OUT_LOCKTURN = "make_it_out_turn"#令目标出局时锁定回合	number（锁定回合：不会切换到下一个玩家，当前玩家继续丢色子和放技能）
+EFFECT_OUT_LOCKTURN = "make_it_out_turn"#令目标出局时锁定回合	number	锁定回合：不会切换到下一个玩家，当前玩家继续丢色子和放技能
 
 
 TRIGGER_SELECT = "select"						#选择目标(包括自己)
@@ -83,13 +87,101 @@ TRIGGER_ALL_EXCEPT_ME = "all_except_me"			#对所有人有效(除了自己)
 TRIGGER_ME = "me"								#只对自己有效
 TRIGGER_NEAR = "near"							#离自己最近的目标
 
-import random
 from .attr import Attr
-from .buff import BuffType
+from .buff import BuffType, BuffTriggerType
 
 # 角色字典
 ROLE = {
 	#注意：id要和_pcr_data.py里对应角色一样
+	1061:{
+		"name":"矛依未",
+
+		"health":1300,
+		"distance":5,
+		"attack":130,
+		"defensive":60,
+		"crit":10,
+		"tp":0,
+
+		"active_skills" : [
+			{
+				"name":"普通攻击",
+				"text":"对目标造成0(+1.0自身攻击力)伤害",
+				"tp_cost":0,
+				"trigger": TRIGGER_SELECT_EXCEPT_ME,
+				"passive":[],
+
+				"effect":{
+					EFFECT_HURT:(0, Attr.ATTACK, 0, 1, False)
+				}
+			},
+			{
+				"name":"吓到你发抖！/ 天楼回刃斩",
+				"text":("吓到你发抖！:对目标造成50(+0.8自身攻击力)伤害，并降低30点攻击力持续2玩家回合，且将其击退5步 \n" + 
+						"\t天楼回刃斩：对目标造成125(+1.25自身攻击力)伤害，并将造成伤害的12%转化为生命值"),
+				"tp_cost":20,
+				"trigger": TRIGGER_SELECT_EXCEPT_ME,
+				"passive":[],
+				"effect":{
+					EFFECT_HURT:(50, Attr.ATTACK, 0, 0.8, False),
+					EFFECT_BUFF:[(BuffType.NormalAttrAtkDown, -30, 2)],
+					EFFECT_HIT_BACK:5,
+					EFFECT_SKILL_CHANGE:(BuffType.TenRouHaDanKen, [0]),
+				}
+			},
+			{
+				"name":"这边啦这边！/ 天楼闪薙斩",
+				"text":("这边啦这边！:降低目标及其半径范围2以内所有玩家75点防御力，持续8个玩家回合 \n" + 
+						"\t天楼闪薙斩：对目标及其半径范围3以内所有玩家造成100(+0.8自身攻击力)伤害，并将造成伤害的5%转化为生命值"),
+				"tp_cost":20,
+				"trigger": TRIGGER_SELECT_EXCEPT_ME,
+				"passive":[],
+				"effect":{
+					EFFECT_BUFF:[(BuffType.NormalAttrDefDown, -75, 99999)],
+					EFFECT_AOE:(2, False),
+					EFFECT_SKILL_CHANGE:(BuffType.TenRouHaDanKen, [1]),
+				}
+			},
+			{
+				"name":"天楼霸断剑",
+				"text":"对目标造成50(+0.8自身攻击力)伤害，并巨幅增加自身所有属性，持续全场！",
+				"tp_cost":100,
+				"trigger": TRIGGER_SELECT_EXCEPT_ME,
+				"passive":[2],
+				"effect":{
+					EFFECT_HURT:(50, Attr.ATTACK, 0, 0.8, False),
+				}
+			}
+		],
+		"passive_skills": [
+			{
+				"trigger": TRIGGER_SELECT_EXCEPT_ME,
+				"effect":{
+					EFFECT_HURT:(125, Attr.ATTACK, 0, 1.25, False),
+					EFFECT_LIFESTEAL:0.12,
+				}
+			},
+			{
+				"trigger": TRIGGER_SELECT_EXCEPT_ME,
+				"effect":{
+					EFFECT_HURT:(100, Attr.ATTACK, 0, 0.8, False),
+					EFFECT_AOE:(3, False),
+					EFFECT_LIFESTEAL:0.05,
+				}
+			},
+			{
+				"trigger": TRIGGER_ME,
+				"effect":{
+					EFFECT_BUFF:[(BuffType.TenRouHaDanKen, 0, 99999),
+								(BuffType.NormalAttrAtkUp, 120, 99999),
+								(BuffType.NormalAttrCritUp, 20, 99999),
+								(BuffType.NormalAttrMaxHelUp, 250, 99999)],
+					EFFECT_ATTR_CHANGE:[(Attr.NOW_TP, 100, 0, 0)],
+					EFFECT_BUFF_TRIGGER:BuffTriggerType.Normal,
+				}
+			}
+		]
+	},
 	1060:{
 		"name":"凯露",
 
@@ -126,7 +218,7 @@ ROLE = {
 			{
 				"name":"能量吸附",
 				"text":"对目标造成100(+1.0自身攻击力)伤害，所造成伤害的50%将转换为自身生命值",
-				"tp_cost":40,
+				"tp_cost":30,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[],
 				"effect":{
@@ -188,12 +280,12 @@ ROLE = {
 			},
 			{
 				"name":"光之守护",
-				"text":"增加500点防御力，持续4个玩家回合",
+				"text":"增加1000点防御力，持续4个玩家回合",
 				"tp_cost":20,
 				"trigger": TRIGGER_ME,
 				"passive":[],
 				"effect":{
-					EFFECT_BUFF:(BuffType.NormalAttrDefUp, 500, 4),
+					EFFECT_BUFF:[(BuffType.NormalAttrDefUp, 1000, 4)],
 				}
 			},
 			{
@@ -221,7 +313,7 @@ ROLE = {
 	1058:{
 		"name":"佩可",
 
-		"health":1500,
+		"health":1400,
 		"distance":5,
 		"attack":60,
 		"defensive":100,
@@ -242,13 +334,13 @@ ROLE = {
 			},
 			{
 				"name":"跳砍",
-				"text":"对目标造成80(+0.8自身防御力)伤害",
+				"text":"对目标造成50(+0.5自身防御力)伤害",
 				"tp_cost":20,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[],
 
 				"effect":{
-					EFFECT_HURT:(0, Attr.DEFENSIVE, 0, 1, False)
+					EFFECT_HURT:(50, Attr.DEFENSIVE, 0, 0.5, False)
 				}
 			},
 			{
@@ -266,13 +358,13 @@ ROLE = {
 			},
 			{
 				"name":"公主突袭",
-				"text":"向目标移动5格，对目标造成150(+1.0自身攻击力)伤害，并增加自身50防御",
+				"text":"向目标移动5格，对目标造成100(+1.0自身攻击力)伤害，并增加自身50防御",
 				"tp_cost":50,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[0,1],
 
 				"effect":{
-					EFFECT_HURT:(150, Attr.ATTACK, 0, 1.0, False),
+					EFFECT_HURT:(100, Attr.ATTACK, 0, 1.0, False),
 				}
 			}
 		],
@@ -320,7 +412,7 @@ ROLE = {
 				"passive":[],
 
 				"effect":{
-					EFFECT_BUFF:(BuffType.Shield, 200, 1),
+					EFFECT_BUFF:[(BuffType.Shield, 200, 1)],
 					EFFECT_ATTR_CHANGE:[(Attr.DEFENSIVE, 20, 0, 0)],
 				}
 			},
@@ -397,13 +489,13 @@ ROLE = {
 			},
 			{
 				"name":"血腥爆破",
-				"text":"对目标造成100(+1.0自身攻击力)的伤害,并提升自身25攻击力,对自身造成100(+0.1攻击力)伤害",
+				"text":"对目标造成120(+1.0自身攻击力)的伤害,并提升自身30攻击力,对自身造成100(+0.1攻击力)伤害",
 				"tp_cost":20,
 				"trigger":TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[0,1],
 
 				"effect":{
-					EFFECT_HURT:(100, Attr.ATTACK, 0, 1.0, False),
+					EFFECT_HURT:(120, Attr.ATTACK, 0, 1.0, False),
 				}
 			},
 			{
@@ -436,7 +528,7 @@ ROLE = {
 			{
 				"trigger":TRIGGER_ME,
 				"effect":{
-					EFFECT_ATTR_CHANGE:[(Attr.ATTACK, 25, 0, 0)],
+					EFFECT_ATTR_CHANGE:[(Attr.ATTACK, 30, 0, 0)],
 				}
 			},
 			{
@@ -492,10 +584,10 @@ ROLE = {
 			},
 			{
 				"name":"附魔之箭",
-				"text":"对目标造成120(+1.5自身攻击力)伤害,并提升自身50攻击力",
+				"text":"对目标造成120(+1.5自身攻击力)伤害,并提升自身50攻击力和回复50tp",
 				"tp_cost":100,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
-				"passive":[1],
+				"passive":[0,1],
 
 				"effect":{
 					EFFECT_HURT:(-120, Attr.ATTACK, 0, 1.5, False)
@@ -547,7 +639,7 @@ ROLE = {
 
 				"effect":{
 					EFFECT_ATTR_CHANGE:[(Attr.ATTACK, 50, 0, 0)],
-					EFFECT_BUFF:(BuffType.AttackAttrCritUp, 70, 1),
+					EFFECT_BUFF:[(BuffType.AttackAttrCritUp, 70, 1)],
 				}
 			},
 			{
@@ -594,13 +686,13 @@ ROLE = {
 		"active_skills":[
 			{
 				"name":"肉蛋葱鸡",
-				"text":"向离自己最近的目标移动3步，并对目标造成0(+1.5自身防御力)伤害",
-				"tp_cost":0,
+				"text":"无视距离，向离自己最近的目标移动3步，并对目标造成0(+1.2自身防御力)伤害",
+				"tp_cost":10,
 				"trigger": TRIGGER_NEAR,
 				"passive":[0],
 
 				"effect":{
-					EFFECT_HURT:(0, Attr.DEFENSIVE, 0, 1.5, False)
+					EFFECT_HURT:(0, Attr.DEFENSIVE, 0, 1.2, False)
 				}
 			},
 			{
@@ -611,7 +703,7 @@ ROLE = {
 				"passive":[],
 
 				"effect":{
-					EFFECT_BUFF:(BuffType.Shield, 200, 1),
+					EFFECT_BUFF:[(BuffType.Shield, 200, 1)],
 					EFFECT_ATTR_CHANGE:[(Attr.DEFENSIVE, 20, 0, 0)],
 				}
 			},
@@ -644,7 +736,7 @@ ROLE = {
 		],
 		"passive_skills":[
 			{
-				"trigger": TRIGGER_SELECT_EXCEPT_ME,
+				"trigger": TRIGGER_NEAR,
 				"effect":{
 					EFFECT_MOVE_GOAL:(3, False),
 				}
@@ -792,12 +884,12 @@ ROLE = {
 		]
 	},
 	1016:{
-		"name":"玲奈",
+		"name":"铃奈",
 		"health":900,
 		"distance":12,
 		"attack":100,
 		"defensive":50,
-		"crit":10,
+		"crit":20,
 		"tp":0,
 
 		"active_skills" : [
@@ -820,7 +912,7 @@ ROLE = {
 				"passive":[],
 
 				"effect":{
-					EFFECT_BUFF:(BuffType.TurnSelfAttrCritUp, 10, 9999),
+					EFFECT_BUFF:[(BuffType.TurnSelfAttrCritUp, 10, 9999)],
 				}
 			},
 			{
@@ -901,7 +993,7 @@ ROLE = {
 				"passive":[],
 
 				"effect":{
-					EFFECT_BUFF:(BuffType.NormalAttrAtkUp, 200, 1),
+					EFFECT_BUFF:[(BuffType.NormalAttrAtkUp, 200, 1)],
 					EFFECT_LOCKTURN:1,
 				}
 			}
@@ -1008,7 +1100,7 @@ ROLE = {
 				"passive":[],
 
 				"effect":{
-					EFFECT_BUFF:(BuffType.Shield, 200, 1),
+					EFFECT_BUFF:[(BuffType.Shield, 200, 1)],
 					EFFECT_ATTR_CHANGE:[(Attr.ATTACK, 30, 0, 0)],
 				}
 			},
