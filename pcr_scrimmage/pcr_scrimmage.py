@@ -183,6 +183,7 @@ class Role:
 			self.attr[Attr.ATTACK] = role_data['attack']
 			self.attr[Attr.DEFENSIVE] = role_data['defensive']
 			self.attr[Attr.CRIT] = role_data['crit']
+			self.attr[Attr.CRIT_HURT] = 2
 			self.attr[Attr.NOW_TP] = role_data['tp']
 			self.attr[Attr.MAX_TP] = MAX_TP
 
@@ -309,6 +310,7 @@ class Role:
 			f"攻击力：{self.attr[Attr.ATTACK]}",
 			f"防御力：{self.attr[Attr.DEFENSIVE]}",
 			f"暴击率：{self.attr[Attr.CRIT]}%",
+			f"暴击伤害：{self.attr[Attr.CRIT_HURT]}倍",
 			f'位置：{self.now_location}'
 		]
 		if len(self.buff) != 0:
@@ -853,7 +855,7 @@ class PCRScrimmage:
 		if addition_type != 0 and addition_prop != 0 :				#计算加成后的数值
 			num = num + addition_goal.attr[addition_type] * addition_prop	
 		if use_skill_player.attr[Attr.CRIT] != 0 and crit_flag:		#计算暴击
-			num *= 2
+			num *= use_skill_player.attr[Attr.CRIT_HURT]
 		if not is_real:#如果是真实伤害则不计算目标的防御
 			goal_player_def = goal_player.attr[Attr.DEFENSIVE]		#目标防御力
 			num = hurt_defensive_calculate(num, goal_player_def)	#计算目标防御力后的数值

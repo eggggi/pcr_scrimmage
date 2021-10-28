@@ -186,6 +186,7 @@ class Role:
 			self.attr[Attr.ATTACK] = role_data['attack']
 			self.attr[Attr.DEFENSIVE] = role_data['defensive']
 			self.attr[Attr.CRIT] = role_data['crit']
+			self.attr[Attr.CRIT_HURT] = 2
 			self.attr[Attr.NOW_TP] = role_data['tp']
 			self.attr[Attr.MAX_TP] = MAX_TP
 
@@ -312,6 +313,7 @@ class Role:
 			f"攻击力：{self.attr[Attr.ATTACK]}",
 			f"防御力：{self.attr[Attr.DEFENSIVE]}",
 			f"暴击率：{self.attr[Attr.CRIT]}%",
+			f"暴击伤害：{self.attr[Attr.CRIT_HURT]}倍",
 			f'位置：{self.now_location}'
 		]
 		if len(self.buff) != 0:
@@ -763,7 +765,7 @@ class PCRScrimmage:
 			if num > 0:
 				back_msg.append(f'{use_player_name}将{goal_player_name}击退了{num}步')
 			else:
-				back_msg.append(f'{use_player_name}将{goal_player_name}拉近了{num}步')
+				back_msg.append(f'{use_player_name}将{goal_player_name}拉近了{abs(num)}步')
 
 		#位置改变
 		if EFFECT_MOVE in skill_effect:
@@ -856,7 +858,7 @@ class PCRScrimmage:
 		if addition_type != 0 and addition_prop != 0 :				#计算加成后的数值
 			num = num + addition_goal.attr[addition_type] * addition_prop	
 		if use_skill_player.attr[Attr.CRIT] != 0 and crit_flag:		#计算暴击
-			num *= 2
+			num *= use_skill_player.attr[Attr.CRIT_HURT]
 		if not is_real:#如果是真实伤害则不计算目标的防御
 			goal_player_def = goal_player.attr[Attr.DEFENSIVE]		#目标防御力
 			num = hurt_defensive_calculate(num, goal_player_def)	#计算目标防御力后的数值
@@ -1348,18 +1350,19 @@ async def check_role(bot, ev: CQEvent):
 	character = chara.fromname(role_name)
 	if character.id != chara.UNKNOWN and character.id in ROLE:
 		role_info = ROLE[character.id]
-		msg = []
-		msg.append(f"名字：{role_info['name']}")
-		msg.append(f"生命值：{role_info['health']}")
-		msg.append(f"TP：{role_info['tp']}")
-		msg.append(f"攻击距离：{role_info['distance']}")
-		msg.append(f"攻击力：{role_info['attack']}")
-		msg.append(f"防御力：{role_info['defensive']}")
-		msg.append(f"暴击率：{role_info['crit'] > MAX_CRIT and MAX_CRIT or role_info['crit']}%")
-		msg.append(f"技能：")
-		skill_num = 0
+		msg = [
+			f"名字：{role_info['name']}",
+			f"生命值：{role_info['health']}",
+			f"TP：{role_info['tp']}",
+			f"攻击距离：{role_info['distance']}",
+			f"攻击力：{role_info['attack']}",
+			f"防御力：{role_info['defensive']}",
+			f"暴击率：{role_info['crit'] > MAX_CRIT and MAX_CRIT or role_info['crit']}%",
+			f"技能：",
+		]
+		skill_num = 1
 		for skill in role_info['active_skills']:
-			msg.append(f"  技能{skill_num + 1}：{skill['name']}({skill['tp_cost']}tp)：{skill['text']}")
+			msg.append(f"  技能{skill_num}：{skill['name']}({skill['tp_cost']}tp)：{skill['text']}")
 			skill_num += 1
 		return await bot.send(ev, "\n".join(msg))
 

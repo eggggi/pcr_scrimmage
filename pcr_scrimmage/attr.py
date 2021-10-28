@@ -9,6 +9,7 @@ class Attr(IntEnum):
 	NOW_TP			= 6	#当前tp
 	MAX_TP			= 7 #最大tp
 	CRIT			= 8	#暴击
+	CRIT_HURT		= 9	#暴击伤害
 
 def AttrTextChange(attr_type):
 	if attr_type == Attr.ATTACK:
@@ -27,3 +28,5 @@ def AttrTextChange(attr_type):
 		return "最大TP"
 	elif attr_type == Attr.CRIT:
 		return "暴击"
+	elif attr_type == Attr.CRIT_HURT:
+		return "暴击伤害"
