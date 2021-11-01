@@ -60,8 +60,8 @@ EFFECT_LIFESTEAL = "life_steal"			#生命偷取	float 伤害-生命值之间的�
 										#EFFECT_LIFESTEAL需要EFFECT_HURT作为前置
 
 EFFECT_BUFF = "buff"					#buff效果		list[tuple,tuple] [(BuffType.xx, 数值, 可触发次数), (...)]
-EFFECT_BUFF_TRIGGER = "buff_trigger"	#buff效果触发	BuffTriggerType		立即触发指定触发类型的buff效果
-										#EFFECT_BUFF_TRIGGER需要EFFECT_BUFF作为前置
+EFFECT_BUFF_BY_BT = "buff_by_bt"		#buff效果触发(通过buff类型)	list[BuffType]		立即触发指定buff类型的buff效果
+										#EFFECT_BUFF_BY_BT需要EFFECT_BUFF作为前置
 EFFECT_ATTR_CHANGE = "attr"				#属性改变，正数为增加，负数为减少	list[tuple,tuple] [(属性类型，数值，加成类型，加成比例), (...)]
 										#属性类型/加成类型：attr.py , 为0时无加成
 
@@ -93,6 +93,92 @@ from .buff import BuffType, BuffTriggerType
 # 角色字典
 ROLE = {
 	#注意：id要和_pcr_data.py里对应角色一样
+	1068:{
+		"name":"晶(beta α)",
+
+		"health":1250,
+		"distance":9,
+		"attack":70,
+		"defensive":100,
+		"crit":15,
+		"tp":0,
+
+		"active_skills" : [
+			{
+				"name":"普通攻击",
+				"text":"对目标造成0(+1.0自身攻击力)伤害,并回复10点TP",
+				"tp_cost":0,
+				"trigger": TRIGGER_SELECT_EXCEPT_ME,
+				"passive":[2],
+
+				"effect":{
+					EFFECT_HURT:(0, Attr.ATTACK, 0, 1, False)
+				}
+			},
+			{
+				"name":"热身!",
+				"text":"热身！:增加自己80攻击力、15%的暴击率持续4回合,并减少周围角色10点永久攻击力。\n",
+				"tp_cost":20,
+				"trigger": TRIGGER_ME,
+				"passive":[0],
+				"effect":{
+					EFFECT_BUFF:[
+						(BuffType.NormalAttrAtkUp, 80, 4),
+						(BuffType.NormalAttrCritUp, 15, 4)
+					],
+				}
+			},
+			{
+				"name":"岩石穿刺",
+				"text":"岩石穿刺！:降低目标玩家100点防御力，持续4个玩家回合，并造成80(+1.5自身攻击力),造成伤害的15%转为生命值。 \n",
+				"tp_cost":30,
+				"trigger": TRIGGER_SELECT_EXCEPT_ME,
+				"passive":[],
+				"effect":{
+					EFFECT_BUFF:[(BuffType.NormalAttrDefDown, -100, 4)],
+					EFFECT_HURT:(80, Attr.ATTACK, 0, 1.5, False),
+					EFFECT_LIFESTEAL:0.15,
+				}
+			},
+			{
+				"name":"万物改造",
+				"text":"使用七冠权力，大幅提升自身属性，并降低其他玩家防御力，回复30TP后继续1回合。",
+				"tp_cost":100,
+				"trigger": TRIGGER_ME,
+				"passive":[1],
+				"effect":{
+					EFFECT_ATTR_CHANGE:[(Attr.NOW_TP, 30, 0, 0)],
+					EFFECT_BUFF:[
+						(BuffType.NormalAttrAtkUp, 200, 99999),
+						(BuffType.NormalAttrCritUp, 25, 99999),
+						(BuffType.NormalAttrDefUp, 30, 99999)
+					],
+					EFFECT_LOCKTURN:1
+				}
+			}
+		],
+		"passive_skills": [
+			{
+				"trigger": TRIGGER_SELECT_EXCEPT_ME,
+				"effect":{
+					EFFECT_ATTR_CHANGE:[(Attr.ATTACK, -10, 0, 0)],
+					EFFECT_AOE:(3, False),
+				}
+			},
+			{
+				"trigger": TRIGGER_ALL_EXCEPT_ME,
+				"effect":{
+					EFFECT_BUFF:[(BuffType.NormalAttrDefDown, 1000, 99999)],
+				}
+			},
+			{
+				"trigger": TRIGGER_ME,
+				"effect":{
+					EFFECT_ATTR_CHANGE:[(Attr.NOW_TP, 10, 0, 0)],
+				}
+			}
+		]
+	},
 	1061:{
 		"name":"矛依未",
 
@@ -106,10 +192,10 @@ ROLE = {
 		"active_skills" : [
 			{
 				"name":"普通攻击",
-				"text":"对目标造成0(+1.0自身攻击力)伤害",
+				"text":"对目标造成0(+1.0自身攻击力)伤害,并回复3点TP",
 				"tp_cost":0,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
-				"passive":[],
+				"passive":[4],
 
 				"effect":{
 					EFFECT_HURT:(0, Attr.ATTACK, 0, 1, False)
@@ -117,27 +203,28 @@ ROLE = {
 			},
 			{
 				"name":"吓到你发抖！/ 天楼回刃斩",
-				"text":("吓到你发抖！:对目标造成50(+0.8自身攻击力)伤害，并降低30点攻击力持续2玩家回合，且将其击退5步 \n" + 
+				"text":("吓到你发抖！:对目标造成50(+0.8自身攻击力)伤害，并降低30点攻击力持续3玩家回合，且将其击退5步 \n" + 
 						"\t天楼回刃斩：对目标造成125(+1.25自身攻击力)伤害，并将造成伤害的12%转化为生命值"),
-				"tp_cost":20,
+				"tp_cost":30,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[],
 				"effect":{
 					EFFECT_HURT:(50, Attr.ATTACK, 0, 0.8, False),
-					EFFECT_BUFF:[(BuffType.NormalAttrAtkDown, -30, 2)],
+					EFFECT_BUFF:[(BuffType.NormalAttrAtkDown, -30, 3)],
 					EFFECT_HIT_BACK:5,
 					EFFECT_SKILL_CHANGE:(BuffType.TenRouHaDanKen, [0]),
 				}
 			},
 			{
 				"name":"这边啦这边！/ 天楼闪薙斩",
-				"text":("这边啦这边！:降低目标及其半径范围2以内所有玩家75点防御力，持续8个玩家回合 \n" + 
-						"\t天楼闪薙斩：对目标及其半径范围3以内所有玩家造成100(+0.8自身攻击力)伤害，并将造成伤害的5%转化为生命值"),
+				"text":("这边啦这边！:降低目标及其半径范围2以内所有玩家45点防御力，持续8个玩家回合，并减少30TP \n" + 
+						"\t天楼闪薙斩：对目标及其半径范围3以内所有玩家造成100(+0.6自身攻击力)伤害，并将造成伤害的5%转化为生命值"),
 				"tp_cost":20,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[],
 				"effect":{
-					EFFECT_BUFF:[(BuffType.NormalAttrDefDown, -75, 99999)],
+					EFFECT_ATTR_CHANGE:[(Attr.NOW_TP, -30, 0, 0)],
+					EFFECT_BUFF:[(BuffType.NormalAttrDefDown, -45, 8)],
 					EFFECT_AOE:(2, False),
 					EFFECT_SKILL_CHANGE:(BuffType.TenRouHaDanKen, [1]),
 				}
@@ -164,7 +251,7 @@ ROLE = {
 			{
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"effect":{
-					EFFECT_HURT:(100, Attr.ATTACK, 0, 0.8, False),
+					EFFECT_HURT:(100, Attr.ATTACK, 0, 0.6, False),
 					EFFECT_AOE:(3, False),
 					EFFECT_LIFESTEAL:0.05,
 				}
@@ -177,7 +264,15 @@ ROLE = {
 								(BuffType.NormalAttrCritUp, 20, 99999),
 								(BuffType.NormalAttrMaxHelUp, 250, 99999)],
 					EFFECT_ATTR_CHANGE:[(Attr.NOW_TP, 100, 0, 0)],
-					EFFECT_BUFF_TRIGGER:BuffTriggerType.Normal,
+					EFFECT_BUFF_BY_BT:[ BuffType.NormalAttrAtkUp,
+										BuffType.NormalAttrCritUp,
+										BuffType.NormalAttrMaxHelUp],
+				}
+			},
+			{
+				"trigger": TRIGGER_ME,
+				"effect":{
+					EFFECT_ATTR_CHANGE:[(Attr.NOW_TP, 3, 0, 0)],
 				}
 			}
 		]
@@ -185,11 +280,11 @@ ROLE = {
 	1060:{
 		"name":"凯露",
 
-		"health":800,
+		"health":1050,
 		"distance":10,
-		"attack":100,
+		"attack":125,
 		"defensive":60,
-		"crit":10,
+		"crit":20,
 		"tp":0,
 
 		"active_skills" : [
@@ -206,34 +301,35 @@ ROLE = {
 			},
 			{
 				"name":"闪电球",
-				"text":"对目标造成100(+0.5自身攻击力)伤害并减少50防御，自身增加20点攻击力",
+				"text":"对目标及其范围1内的敌人造成70(+0.7自身攻击力)伤害并减少50防御(持续4回合)，并增加自身20点攻击力",
 				"tp_cost":20,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[0],
 				"effect":{
-					EFFECT_HURT:(100, Attr.ATTACK, 0, 0.5, False),
-					EFFECT_ATTR_CHANGE:[(Attr.DEFENSIVE, -50, 0, 0)],
+					EFFECT_HURT:(70, Attr.ATTACK, 0, 0.7, False),
+					EFFECT_BUFF:[(BuffType.NormalAttrDefDown, -50, 4)],
+					EFFECT_AOE:(1, False),
 				}
 			},
 			{
 				"name":"能量吸附",
-				"text":"对目标造成100(+1.0自身攻击力)伤害，所造成伤害的50%将转换为自身生命值",
+				"text":"对目标造成50(+1.5自身攻击力)伤害，并将造成伤害的30%转换为自身生命值，并回复自身20点TP",
 				"tp_cost":30,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
-				"passive":[],
+				"passive":[1],
 				"effect":{
-					EFFECT_HURT:(100, Attr.ATTACK, 0, 1.0, False),
-					EFFECT_LIFESTEAL:0.5,
+					EFFECT_HURT:(50, Attr.ATTACK, 0, 1.5, False),
+					EFFECT_LIFESTEAL:0.3,
 				}
 			},
 			{
 				"name":"格林爆裂",
-				"text":"对所有人造成200(+1.5自身攻击力)伤害",
-				"tp_cost":50,
+				"text":"对所有人造成100(+2.25自身攻击力)真实伤害",
+				"tp_cost":60,
 				"trigger": TRIGGER_ALL_EXCEPT_ME,
 				"passive":[],
 				"effect":{
-					EFFECT_HURT:(200, Attr.ATTACK, 0, 1.5, False),
+					EFFECT_HURT:(100, Attr.ATTACK, 0, 2.25, True),
 				}
 			}
 		],
@@ -243,9 +339,17 @@ ROLE = {
 				"effect":{
 					EFFECT_ATTR_CHANGE:[(Attr.ATTACK, 20, 0, 0)],
 				}
+			},
+			{
+				"trigger": TRIGGER_ME,
+				"effect":{
+					EFFECT_ATTR_CHANGE:[(Attr.NOW_TP, 20, 0, 0)],
+				}
 			}
-		]
-	},
+		], 
+				
+     },
+	
 	1059:{
 		"name":"可可萝",
 
@@ -279,7 +383,7 @@ ROLE = {
 				}
 			},
 			{
-				"name":"光之守护",
+				"name":"极光守护",
 				"text":"增加1000点防御力，持续4个玩家回合",
 				"tp_cost":20,
 				"trigger": TRIGGER_ME,
@@ -290,7 +394,7 @@ ROLE = {
 			},
 			{
 				"name":"光之加护",
-				"text":"自身回复250点生命值，并增加50点攻击力",
+				"text":"自身回复300点生命值，并增加50点攻击力",
 				"tp_cost":50,
 				"trigger": TRIGGER_ME,
 				"passive":[],
@@ -313,23 +417,23 @@ ROLE = {
 	1058:{
 		"name":"佩可",
 
-		"health":1400,
+		"health":1800,
 		"distance":5,
-		"attack":60,
-		"defensive":100,
+		"attack":55,
+		"defensive":82,
 		"crit":5,
 		"tp":0,
 
 		"active_skills" : [
 			{
 				"name":"普通攻击",
-				"text":"对目标造成0(+1.0自身攻击力)伤害",
+				"text":"对目标造成0(+1.8自身攻击力)伤害",
 				"tp_cost":0,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[],
 
 				"effect":{
-					EFFECT_HURT:(0, Attr.ATTACK, 0, 1, False)
+					EFFECT_HURT:(0, Attr.ATTACK, 0, 1.8, False)
 				}
 			},
 			{
@@ -345,26 +449,26 @@ ROLE = {
 			},
 			{
 				"name":"超大饭团",
-				"text":"回复自身100(+0.5自身防御力)生命值，并增加10点攻击力",
-				"tp_cost":20,
+				"text":"回复自身100(+0.8自身防御力)生命值，并增加22点防御力",
+				"tp_cost":25,
 				"trigger": TRIGGER_ME,
 				"passive":[],
 
 				"effect":{
 					EFFECT_ATTR_CHANGE:[
-						(Attr.NOW_HEALTH, 100, Attr.DEFENSIVE, 0.5),
-						(Attr.ATTACK, 10, 0, 0)],
+						(Attr.NOW_HEALTH, 100, Attr.DEFENSIVE, 0.8),
+						(Attr.DEFENSIVE, 22, 0, 0)],
 				}
 			},
 			{
 				"name":"公主突袭",
-				"text":"向目标移动5格，对目标造成100(+1.0自身攻击力)伤害，并增加自身50防御",
-				"tp_cost":50,
+				"text":"向目标移动5格，对目标造成225真实伤害，并增加自身48点防御力",
+				"tp_cost":45,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[0,1],
 
 				"effect":{
-					EFFECT_HURT:(100, Attr.ATTACK, 0, 1.0, False),
+					EFFECT_HURT:(225, Attr.ATTACK, 0, 0, True),
 				}
 			}
 		],
@@ -378,64 +482,64 @@ ROLE = {
 			{
 				"trigger": TRIGGER_ME,
 				"effect":{
-					EFFECT_ATTR_CHANGE:[(Attr.DEFENSIVE, 50, 0, 0)],
+					EFFECT_ATTR_CHANGE:[(Attr.DEFENSIVE, 48, 0, 0)],
 				}
 			}
 		]
 	},
 	1052:{
 		"name":"莉玛",
-		"health":1800,
+		"health":2000,
 		"distance":5,
-		"attack":50,
-		"defensive":150,
+		"attack":0,
+		"defensive":160,
 		"crit":0,
 		"tp":0,
 
 		"active_skills":[
 			{
 				"name":"普通攻击",
-				"text":"对目标造成0(+1.0自身攻击力)伤害",
+				"text":"对目标造成30真实伤害",
 				"tp_cost":0,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[],
 
 				"effect":{
-					EFFECT_HURT:(0, Attr.ATTACK, 0, 1, False)
+					EFFECT_HURT:(30, Attr.ATTACK, 0, 0, True)
 				}
 			},
 			{
 				"name":"护盾",
-				"text":"为自己增加一个200点生命值的护盾（只可触发1次），并增加20点防御力",
+				"text":"为自己增加一个200点生命值的护盾（只可触发1次），并增加10点防御力",
 				"tp_cost":30,
 				"trigger": TRIGGER_ME,
 				"passive":[],
 
 				"effect":{
 					EFFECT_BUFF:[(BuffType.Shield, 200, 1)],
-					EFFECT_ATTR_CHANGE:[(Attr.DEFENSIVE, 20, 0, 0)],
+					EFFECT_ATTR_CHANGE:[(Attr.DEFENSIVE, 10, 0, 0)],
 				}
 			},
 			{
 				"name":"毛茸茸突袭",
-				"text":"向目标移动3格，对目标造成60(+0.7自身防御力)伤害，并增加自身50点防御",
-				"tp_cost":30,
+				"text":"向目标移动3格，对目标造成60(+0.3自身防御力)伤害，并增加自身32点防御",
+				"tp_cost":24,
 				"trigger":TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[0,1],
 				
 				"effect":{
-					EFFECT_HURT:(-60, Attr.DEFENSIVE, 0, 0.7, False),
+					EFFECT_HURT:(60, Attr.DEFENSIVE, 0, 0.3, False),
 				}
 			},
 			{
 				"name":"毛茸茸挥击",
-				"text":"向目标移动4格，对目标造成120(+1.0自身防御力)伤害，并增加自身100点防御",
-				"tp_cost":60,
+				"text":"向目标移动4格，对目标造成140(+0.8自身防御力)伤害，并增加自身75点防御",
+				"tp_cost":66,
 				"trigger":TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[2,3],
 
 				"effect":{
-					EFFECT_HURT:(-120, Attr.DEFENSIVE, 0, 1.0, False),
+					EFFECT_HURT:(140, Attr.DEFENSIVE, 0, 0.8, False),
 				},
 			}
 		],
@@ -449,7 +553,7 @@ ROLE = {
 			{
 				"trigger": TRIGGER_ME,
 				"effect":{
-					EFFECT_ATTR_CHANGE:[(Attr.DEFENSIVE, 50, 0, 0)],
+					EFFECT_ATTR_CHANGE:[(Attr.DEFENSIVE, 32, 0, 0)],
 				}
 			},
 			{
@@ -461,66 +565,69 @@ ROLE = {
 			{
 				"trigger": TRIGGER_ME,
 				"effect":{
-					EFFECT_ATTR_CHANGE:[(Attr.DEFENSIVE, 100, 0, 0)],
+					EFFECT_ATTR_CHANGE:[(Attr.DEFENSIVE, 75, 0, 0)],
 				}
 			},
 		]
 	},
 	1044:{
 		"name":"伊莉亚",
-		"health":1100,
+		"health":1280,
 		"distance":7,
-		"attack":100,
-		"defensive":80,
-		"crit":20,
+		"attack":180,
+		"defensive":40,
+		"crit":25,
 		"tp":0,
 
 		"active_skills":[
 			{
 				"name":"普通攻击",
-				"text":"对目标造成0(+1.0自身攻击力)伤害",
+				"text":"对目标造成0(+0.8自身攻击力)真实伤害，并回复所造成伤害50%生命值",
 				"tp_cost":0,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[],
 
 				"effect":{
-					EFFECT_HURT:(0, Attr.ATTACK, 0, 1, False)
+					EFFECT_HURT:(0, Attr.ATTACK, 0, 0.8, True),
+					EFFECT_LIFESTEAL:0.5
 				}
 			},
 			{
 				"name":"血腥爆破",
-				"text":"对目标造成120(+1.0自身攻击力)的伤害,并提升自身30攻击力,对自身造成100(+0.1攻击力)伤害",
-				"tp_cost":20,
+				"text":"对目标造成120(+0.8自身攻击力)的真实伤害,并提升自身25攻击力、回复所造成伤害40%生命值,且对自身造成60(+0.6攻击力)伤害",
+				"tp_cost":25,
 				"trigger":TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[0,1],
 
 				"effect":{
-					EFFECT_HURT:(120, Attr.ATTACK, 0, 1.0, False),
+					EFFECT_HURT:(120, Attr.ATTACK, 0, 0.8, True),
+					EFFECT_LIFESTEAL:0.4
 				}
 			},
 			{
 				"name":"血腥之矛",
-				"text":"对目标及其半径4范围内的所有玩家造成100(+1.0自身攻击力)的伤害,对自身造成100(+0.1攻击力)伤害",
+				"text":"对目标及其半径4范围内的所有玩家造成140(+0.5自身攻击力)的真实伤害,并回复所造成伤害25%生命值,且对自身造成45(+0.8攻击力)伤害",
 				"tp_cost":20,
 				"trigger":TRIGGER_SELECT_EXCEPT_ME,
-				"passive":[1],
+				"passive":[2],
 				
 				"effect":{
 					EFFECT_AOE:(4, False),
-					EFFECT_HURT:(100, Attr.ATTACK, 0, 1.0, False)
+					EFFECT_HURT:(140, Attr.ATTACK, 0, 0.5, True),
+					EFFECT_LIFESTEAL:0.25
 				}
 			},
 			{
 				"name":"朱色之噬",
-				"text":"对目标及其半径4范围内除自己外的所有玩家造成150(+1.5自身攻击力)的伤害,并恢复等同伤害的生命值",
-				"tp_cost":50,
+				"text":"对目标及其半径3范围内除自己外的所有玩家造成150(+1.2自身攻击力)的真实伤害,并回复所造成伤害60%生命值",
+				"tp_cost":60,
 				"trigger":TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[],
 
 				"effect":{
-					EFFECT_AOE:(4, False),
-					EFFECT_HURT:(150, Attr.ATTACK, 0, 1.5, False),
-					EFFECT_LIFESTEAL:1.0,
+					EFFECT_AOE:(3, False),
+					EFFECT_HURT:(150, Attr.ATTACK, 0, 1.2, True),
+					EFFECT_LIFESTEAL:0.6,
 				}
 			}
 		],
@@ -528,69 +635,75 @@ ROLE = {
 			{
 				"trigger":TRIGGER_ME,
 				"effect":{
-					EFFECT_ATTR_CHANGE:[(Attr.ATTACK, 30, 0, 0)],
+					EFFECT_ATTR_CHANGE:[(Attr.ATTACK, 25, 0, 0)],
 				}
 			},
 			{
 				"trigger":TRIGGER_ME,
 				"effect":{
-					EFFECT_HURT:(100, Attr.ATTACK, 0, 0.1, False),
+					EFFECT_HURT:(60, Attr.ATTACK, 0, 0.6, False),
+				}
+			},
+			{
+				"trigger":TRIGGER_ME,
+				"effect":{
+					EFFECT_HURT:(45, Attr.ATTACK, 0, 0.8, False),
 				}
 			}
 		]
 	},
 	1038:{
 		"name":"栞",
-		"health":750,
+		"health":825,
 		"distance":10,
 		"attack":80,
 		"defensive":60,
 		"crit":5,
-		"tp":10,
+		"tp":0,
 
 		"active_skills" : [
 			{
 				"name":"普通攻击",
-				"text":"对目标造成0(+1.0自身攻击力)伤害",
-				"tp_cost":10,
+				"text":"对目标造成0(+0.5自身攻击力)伤害",
+				"tp_cost":0,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[],
 
 				"effect":{
-					EFFECT_HURT:(0, Attr.ATTACK, 0, 1, False)
+					EFFECT_HURT:(0, Attr.ATTACK, 0, 0.5, False)
 				}
 			},
 			{
 				"name":"风之箭",
-				"text":"对目标造成80(+1.0自身攻击力)伤害,并自身回复50tp",
+				"text":"对目标造成80(+1.45自身攻击力)伤害,并自身回复50tp",
 				"tp_cost":20,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[0],
 
 				"effect":{
-					EFFECT_HURT:(-80, Attr.ATTACK, 0, 1.0, False)
+					EFFECT_HURT:(-80, Attr.ATTACK, 0, 1.45, False)
 				}
 			},
 			{
 				"name":"三重箭矢",
-				"text":"对除自己外所有玩家造成50(+0.5自身攻击力)伤害,并自身回复50tp",
+				"text":"对除自己外所有玩家造成70(+0.8自身攻击力)伤害,并自身回复50tp",
 				"tp_cost":20,
 				"trigger": TRIGGER_ALL_EXCEPT_ME,
 				"passive":[0],
 
 				"effect":{
-					EFFECT_HURT:(-50, Attr.ATTACK, 0, 0.5, False)
+					EFFECT_HURT:(70, Attr.ATTACK, 0, 0.8, False)
 				}
 			},
 			{
 				"name":"附魔之箭",
-				"text":"对目标造成120(+1.5自身攻击力)伤害,并提升自身50攻击力和回复50tp",
+				"text":"对目标造成120(+1.5自身攻击力)伤害,并提升自身100攻击力和回复50tp",
 				"tp_cost":100,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[0,1],
 
 				"effect":{
-					EFFECT_HURT:(-120, Attr.ATTACK, 0, 1.5, False)
+					EFFECT_HURT:(120, Attr.ATTACK, 0, 1.5, False)
 				}
 			}
 		],
@@ -604,7 +717,7 @@ ROLE = {
 				{
 				"trigger": TRIGGER_ME,
 				"effect":{
-					EFFECT_ATTR_CHANGE:[(Attr.ATTACK, 50, 0, 0)]
+					EFFECT_ATTR_CHANGE:[(Attr.ATTACK, 100, 0, 0)]
 					}
 				}
 		]
@@ -678,8 +791,8 @@ ROLE = {
 		"name":"优花梨",
 		"health":1200,
 		"distance":7,
-		"attack":90,
-		"defensive":150,
+		"attack":0,
+		"defensive":120,
 		"crit":0,
 		"tp":20,
 
@@ -697,14 +810,14 @@ ROLE = {
 			},
 			{
 				"name":"护盾",
-				"text":"为自己增加一个200点生命值的护盾（只可触发1次），并增加20点防御力",
+				"text":"为自己增加一个350点生命值的护盾（只可触发1次），并增加25点防御力",
 				"tp_cost":20,
 				"trigger": TRIGGER_ME,
 				"passive":[],
 
 				"effect":{
-					EFFECT_BUFF:[(BuffType.Shield, 200, 1)],
-					EFFECT_ATTR_CHANGE:[(Attr.DEFENSIVE, 20, 0, 0)],
+					EFFECT_BUFF:[(BuffType.Shield, 350, 1)],
+					EFFECT_ATTR_CHANGE:[(Attr.DEFENSIVE, 25, 0, 0)],
 				}
 			},
 			{
@@ -722,15 +835,15 @@ ROLE = {
 			},
 			{
 				"name":"第七天堂",
-				"text":"提升全体100防御,回复全体根据自身防御90%生命值,自身额外提升50防御和100生命值",
-				"tp_cost":70,
+				"text":"提升全体40防御,回复全体根据自身防御90%生命值,自身额外提升60防御和200生命值",
+				"tp_cost":80,
 				"trigger":TRIGGER_ALL,
 				"passive":[1],
 
 				"effect":{
 					EFFECT_ATTR_CHANGE:[
 						(Attr.NOW_HEALTH, 0, Attr.DEFENSIVE, 0.9),
-						(Attr.DEFENSIVE, 100, 0, 0)],
+						(Attr.DEFENSIVE, 40, 0, 0)],
 				},
 			}
 		],
@@ -745,15 +858,15 @@ ROLE = {
 				"trigger": TRIGGER_ME,
 				"effect":{
 					EFFECT_ATTR_CHANGE:[
-						(Attr.DEFENSIVE, 50, 0, 0),
-						(Attr.NOW_HEALTH,100, 0, 0)],
+						(Attr.DEFENSIVE, 60, 0, 0),
+						(Attr.NOW_HEALTH,200, 0, 0)],
 				},
 			}
 		]
 	},
 	1022:{
 		"name":"依里",
-		"health":800,
+		"health":900,
 		"distance":10,
 		"attack":120,
 		"defensive":50,
@@ -775,41 +888,42 @@ ROLE = {
 			},
 			{
 				"name":"极限充能",
-				"text":"消耗自身100HP提高50攻击力，并自身回复30TP",
+				"text":"消耗自身150HP提高70攻击力，并自身回复30TP",
 				"tp_cost":0,
 				"trigger": TRIGGER_ME,
 				"passive":[],
 
 				"effect":{
 					EFFECT_ATTR_CHANGE:[
-						(Attr.ATTACK, 50, 0, 0),
+						(Attr.ATTACK, 70, 0, 0),
 						(Attr.NOW_TP, 30, 0, 0),
-						(Attr.NOW_HEALTH, -100, 0, 0,)],
+						(Attr.NOW_HEALTH, -150, 0, 0,)],
 				}
 			},
 			{
 				"name":"暗影吮吸",
-				"text":"对目标造成80(+0.8自身攻击力)伤害，并将所造成伤害的20%转换为生命值",
+				"text":"对目标及其半径3内的敌人造成60(+0.7自身攻击力)真实伤害，并将所造成伤害的30%转换为生命值",
 				"tp_cost":20,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[],
 
 				"effect":{
-					EFFECT_HURT:(80, Attr.ATTACK, 0, 0.8, False),
-					EFFECT_LIFESTEAL:0.2,
+					EFFECT_HURT:(60, Attr.ATTACK, 0, 0.7, True),
+					EFFECT_AOE:(3, False),
+					EFFECT_LIFESTEAL:0.30,
 				}
 			},
 			{
 				"name":"闪电之枪",
-				"text":"对目标及其半径4范围内自己以外的玩家造成150(+1.5自身攻击力)伤害，并将所造成伤害的20%转换为生命值",
+				"text":"对目标及其半径4范围内自己以外的玩家造成70(+2.0自身攻击力)真实伤害，并将所造成伤害的10%转换为生命值",
 				"tp_cost":50,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[],
 
 				"effect":{
 					EFFECT_AOE:(4, False),
-					EFFECT_HURT:(-150, Attr.ATTACK, 0, 1.5, False),
-					EFFECT_LIFESTEAL:0.2,
+					EFFECT_HURT:(70, Attr.ATTACK, 0, 2.0, True),
+					EFFECT_LIFESTEAL:0.1,
 				}
 			}
 		],
@@ -838,33 +952,33 @@ ROLE = {
 			},
 			{
 				"name":"蹦蹦跳跳",
-				"text":"自身增加30点攻击力和30点防御力",
+				"text":"自身增加40点攻击力和20点防御力",
 				"tp_cost":20,
 				"trigger": TRIGGER_ME,
 				"passive":[],
 
 				"effect":{
 					EFFECT_ATTR_CHANGE:[
-						(Attr.ATTACK, 30, 0, 0),
-						(Attr.DEFENSIVE, 30, 0, 0)],
+						(Attr.ATTACK, 40, 0, 0),
+						(Attr.DEFENSIVE, 20, 0, 0)],
 				}
 			},
 			{
 				"name":"崩山击",
-				"text":"向目标移动3格，并对目标及其半径5范围内的所有玩家造成100(+1.0自身攻击力)伤害",
+				"text":"向目标移动3格，并对目标及其半径4范围内的所有玩家造成100(+1.0自身攻击力)伤害",
 				"tp_cost":30,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[0],
 
 				"effect":{
 					EFFECT_HURT:(100, Attr.ATTACK, 0, 1.0, False),
-					EFFECT_AOE:(5, False)
+					EFFECT_AOE:(4, False)
 				}
 			},
 			{
 				"name":"兰德索尔正义",
 				"text":"对目标造成100点真实伤害，目标当前生命值每降低1%则额外造成7点真实伤害",#斩杀效果
-				"tp_cost":60,
+				"tp_cost":65,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[],
 
@@ -889,7 +1003,7 @@ ROLE = {
 		"distance":12,
 		"attack":100,
 		"defensive":50,
-		"crit":20,
+		"crit":0,
 		"tp":0,
 
 		"active_skills" : [
@@ -906,13 +1020,13 @@ ROLE = {
 			},
 			{
 				"name":"魅力全开",
-				"text":"每自我回合增加10%暴击率，持续全局",
+				"text":"每自我回合增加15%暴击率，持续全局",
 				"tp_cost":0,
 				"trigger": TRIGGER_ME,
 				"passive":[],
 
 				"effect":{
-					EFFECT_BUFF:[(BuffType.TurnSelfAttrCritUp, 10, 9999)],
+					EFFECT_BUFF:[(BuffType.TurnSelfAttrCritUp, 15, 9999)],
 				}
 			},
 			{
@@ -929,7 +1043,7 @@ ROLE = {
 			{
 				"name":"一箭穿心",
 				"text":"对目标造成200(+2.0自身攻击力)伤害",
-				"tp_cost":60,
+				"tp_cost":70,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[],
 
@@ -944,8 +1058,8 @@ ROLE = {
 		"name":"茜里",
 		"health":1000,
 		"distance":10,
-		"attack":100,
-		"defensive":50,
+		"attack":90,
+		"defensive":80,
 		"crit":5,
 		"tp":0,
 
@@ -975,14 +1089,14 @@ ROLE = {
 			},
 			{
 				"name":"暗影打击",
-				"text":"对目标造成100(+1.0自身攻击力)伤害，并降低目标50点护甲",
+				"text":"对目标造成100(+1.0自身攻击力)伤害，并降低目标35点护甲持续12回合",
 				"tp_cost":20,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[],
 
 				"effect":{
 					EFFECT_HURT:(100, Attr.ATTACK, 0, 1.0, False),
-					EFFECT_ATTR_CHANGE:[(Attr.DEFENSIVE, -50, 0, 0)]
+					EFFECT_BUFF:[(BuffType.NormalAttrDefDown, -35, 12)],
 				}
 			},
 			{
@@ -1002,10 +1116,10 @@ ROLE = {
 	},
 	1004:{
 		"name":"未奏希",
-		"health":1500,
+		"health":1200,
 		"distance":10,
 		"attack":100,
-		"defensive":150,
+		"defensive":175,
 		"crit":10,
 		"tp":0,
 
@@ -1023,14 +1137,14 @@ ROLE = {
 			},
 			{
 				"name":"小炸弹",
-				"text":"对目标及其半径4范围内的所有玩家造成100(+1.0自身攻击力)伤害（包括自己）",
+				"text":"对目标及其半径4范围内的所有玩家造成100(+1.0自身攻击力)伤害（不包括自己）",
 				"tp_cost":20,
 				"trigger": TRIGGER_SELECT,
 				"passive":[],
 
 				"effect":{
 					EFFECT_HURT:(100, Attr.ATTACK, 0, 1.0, False),
-					EFFECT_AOE:(4, True)
+					EFFECT_AOE:(4, False)
 				}
 			},
 			{
@@ -1047,17 +1161,24 @@ ROLE = {
 			},
 			{
 				"name":"大炸弹",
-				"text":"对场上所有玩家造成200(+2.0自身攻击力)伤害（包括自己）",
+				"text":"对场上所有玩家造成200(+2.0自身攻击力)伤害（包括自己），并赋予其他玩家灼烧状态",
 				"tp_cost":60,
 				"trigger": TRIGGER_ALL,
-				"passive":[],
+				"passive":[0],
 
 				"effect":{
 					EFFECT_HURT:(200, Attr.ATTACK, 0, 2.0, False)
 				}
 			}
 		],
-		"passive_skills": []
+		"passive_skills": [
+			{
+				"trigger": TRIGGER_ALL_EXCEPT_ME,
+				"effect":{
+					EFFECT_BUFF:[(BuffType.TurnAttrHelDown2, -100, 3)],
+				}
+			}
+		]
 	},
 	1003:{
 		"name":"怜",
@@ -1082,14 +1203,14 @@ ROLE = {
 			},
 			{
 				"name":"破甲突刺",
-				"text":"无视距离，对离自己最近的目标造成100(+1.0自身攻击力)伤害，并降低目标50点防御力",
+				"text":"无视距离，对离自己最近的目标造成100(+1.0自身攻击力)伤害，并降低目标20点防御力",
 				"tp_cost":20,
 				"trigger": TRIGGER_NEAR,
 				"passive":[],
 
 				"effect":{
 					EFFECT_HURT:(100, Attr.ATTACK, 0, 1.0, False),
-					EFFECT_ATTR_CHANGE:[(Attr.DEFENSIVE, -50, 0, 0)],
+					EFFECT_ATTR_CHANGE:[(Attr.DEFENSIVE, -20, 0, 0)],
 				}
 			},
 			{
@@ -1120,7 +1241,7 @@ ROLE = {
 	},
 	1002:{
 		"name":"优衣",
-		"health":1000,
+		"health":850,
 		"distance":8,
 		"attack":80,
 		"defensive":60,
@@ -1141,22 +1262,22 @@ ROLE = {
 			},
 			{
 				"name":"花瓣射击",
-				"text":"对目标造成100(+1.5自身攻击力)伤害，并降低目标20点攻击力和10点TP",
+				"text":"对目标造成75(+1.5自身攻击力)伤害，并降低目标70点攻击力1回合和10点TP",
 				"tp_cost":20,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[],
 
 				"effect":{
-					EFFECT_HURT:(100, Attr.ATTACK, 0, 1.5, False),
+					EFFECT_HURT:(75, Attr.ATTACK, 0, 1.5, False),
+					EFFECT_BUFF:[(BuffType.NormalSelfAttrAtkDown, -70, 1)],
 					EFFECT_ATTR_CHANGE:[
-						(Attr.ATTACK, -20, 0, 0),
 						(Attr.NOW_TP, -10, 0, 0)],
 				}
 			},
 			{
 				"name":"全体治愈",
-				"text":"全体回复100生命值，自己额外回复100生命值，除自己外减少3点攻击距离",
-				"tp_cost":50,
+				"text":"全体回复100生命值，自己额外回复300生命值，除自己外减少3点攻击距离",
+				"tp_cost":60,
 				"trigger": TRIGGER_ALL,
 				"passive":[0,1],
 
@@ -1175,7 +1296,7 @@ ROLE = {
 			{
 				"trigger": TRIGGER_ME,
 				"effect":{
-					EFFECT_ATTR_CHANGE:[(Attr.NOW_HEALTH, 100, 0, 0)]
+					EFFECT_ATTR_CHANGE:[(Attr.NOW_HEALTH, 300, 0, 0)]
 				}
 			}
 		],
@@ -1230,6 +1351,4 @@ ROLE = {
 		],
 		"passive_skills": []
 	},
-
-
 }

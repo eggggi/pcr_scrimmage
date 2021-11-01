@@ -30,22 +30,25 @@ class BuffEffectType(IntEnum):
 class BuffType(IntEnum):
 	TenRouHaDanKen		= 100001	#天楼霸断剑特殊buff
 
-	NormalAttrAtkUp		= 10101
-	NormalAttrAtkDown	= 10102
-	NormalAttrDefUp		= 10103
-	NormalAttrMaxHelUp	= 10104
-	NormalAttrCritUp	= 10105
-	NormalAttrDefDown	= 10106
+	NormalAttrAtkUp			= 10101
+	NormalAttrAtkDown		= 10102
+	NormalAttrDefUp			= 10103
+	NormalAttrMaxHelUp		= 10104
+	NormalAttrCritUp		= 10105
+	NormalAttrDefDown		= 10106
 
-	TurnAttrAtkUp		= 20101
-	TurnAttrAtkDown		= 20102
-	TurnAttrHelDown		= 20103
+	TurnAttrAtkUp			= 20101
+	TurnAttrAtkDown			= 20102
+	TurnAttrHelDown			= 20103
+	TurnAttrHelDown2		= 20104
 
-	Shield				= 30201
+	Shield					= 30201
 
-	TurnSelfAttrCritUp	= 50101
+	NormalSelfAttrAtkDown	= 40101
 
-	AttackAttrCritUp	= 60101
+	TurnSelfAttrCritUp		= 50101
+
+	AttackAttrCritUp		= 60101
 
 Buff = {
 	BuffType.TenRouHaDanKen:{
@@ -130,12 +133,29 @@ Buff = {
 
 		'attr_type':Attr.NOW_HEALTH,
 	},
+	BuffType.TurnAttrHelDown2:{
+		'name':'灼烧',
+		'text':'每回合降低{0}点生命值，持续{1}个玩家回合',
+		'trigger_type':BuffTriggerType.Turn,
+		'effect_type':BuffEffectType.Attr,
+
+		'attr_type':Attr.NOW_HEALTH,
+	},
 
 	BuffType.Shield:{
 		'name':'护盾',
 		'text':'增加一个能承受{0}伤害的护盾，可触发{1}次',
 		'trigger_type':BuffTriggerType.Hurt,
 		'effect_type':BuffEffectType.Shield,
+	},
+
+	BuffType.NormalSelfAttrAtkDown:{
+		'name':'虚弱',
+		'text':'每回合降低{0}攻击力，持续{1}个自我回合',
+		'trigger_type':BuffTriggerType.NormalSelf,
+		'effect_type':BuffEffectType.Attr,
+
+		'attr_type':Attr.ATTACK,
 	},
 
 	BuffType.TurnSelfAttrCritUp:{#暴击弓专属buff

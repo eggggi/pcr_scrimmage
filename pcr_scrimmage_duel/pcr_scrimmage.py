@@ -32,13 +32,10 @@ from .attr import Attr, AttrTextChange
 from .buff import BuffEffectType, BuffTriggerType, Buff
 from .runway_case import (CASE_NONE, CASE_ATTACK, CASE_DEFENSIVE, CASE_HEALTH, 
 						  CASE_MOVE, CASE_TP, RUNWAY_CASE)
-from .role import (EFFECT_BUFF, EFFECT_BUFF_TRIGGER, EFFECT_HIT_BACK, EFFECT_SKILL_CHANGE, ROLE, EFFECT_LOCKTURN,
+from .role import (EFFECT_BUFF, EFFECT_BUFF_BY_BT, EFFECT_HIT_BACK, EFFECT_SKILL_CHANGE, ROLE, EFFECT_LOCKTURN,
 				   EFFECT_HURT, EFFECT_ATTR_CHANGE, EFFECT_MOVE, EFFECT_MOVE_GOAL, EFFECT_LIFESTEAL,
 				   EFFECT_OUT_TP, EFFECT_OUT_LOCKTURN, EFFECT_IGNORE_DIST, EFFECT_AOE, EFFECT_ELIMINATE,
 				   TRIGGER_ME, TRIGGER_ALL_EXCEPT_ME, TRIGGER_ALL, TRIGGER_SELECT, TRIGGER_SELECT_EXCEPT_ME, TRIGGER_NEAR)
-
-from .get_gold import (ScoreCounter, daily_card_limiter, 
-						MAX_GUESS_NUM, GOLD_DICT)
 
 sv = Service(	'pcr_scrimmage',
 				manage_priv=priv.ADMIN,
@@ -145,22 +142,10 @@ class Role:
 		}
 		'''
 		self.buff = {}			#角色buff列表
-		'''self.buff 的结构
+		'''
 		{
-			BuffTriggerType.xx = {
-				BuffEffectType.xx = {
-					BuffType = [数值, 次数, flag],
-					BuffType = [数值, 次数, flag]
-				},
-				BuffEffectType.xx = {
-					BuffType = [数值, 次数, flag]
-				}
-			},
-			BuffTriggerType.xx = {
-				BuffEffectType.xx = {
-					BuffType = [数值, 次数, flag]
-				}
-			},
+			BuffType1 = [数值, 次数, flag],
+			BuffType2 = [数值, 次数, flag],
 		}
 		'''
 
@@ -251,26 +236,33 @@ class Role:
 
 	#被攻击
 	def beHurt(self, num):
-		num = self.buffTrigger(BuffTriggerType.Hurt, num)
+		num = self.buffTriggerByTriggerType(BuffTriggerType.Hurt, num)
 		self.attrChange(Attr.NOW_HEALTH, num)
 		return num
 
 	#添加buff
 	def addBuff(self, buff_info):
-		buffType = buff_info[0]
-		trigger_type = Buff[buffType]['trigger_type']
-		effect_type = Buff[buffType]['effect_type']
-		if trigger_type not in self.buff:self.buff[trigger_type] = {}
-		if effect_type not in self.buff[trigger_type]:self.buff[trigger_type][effect_type] = {}
-		self.buff[trigger_type][effect_type][buffType] = [buff_info[1], buff_info[2], 0]
-	#buff触发器
-	def buffTrigger(self, trigger_type, num = 0):
-		if trigger_type in self.buff:
-			for effect_type, buff_infos in self.buff[trigger_type].items():
-				for buff_type, info in buff_infos.items():
-					num = self.buffEffect(trigger_type, effect_type, buff_type, info, num)
-					if len(buff_infos) == 0 : break
+		self.buff[buff_info[0]] = [buff_info[1], buff_info[2], 0]
+
+	#通过触发类型触发buff
+	def buffTriggerByTriggerType(self, trigger_type, num = 0):
+		for buff_type in self.buff.keys():
+			need_trigger_type = Buff[buff_type]['trigger_type']
+			if need_trigger_type == trigger_type:
+				effect_type = Buff[buff_type]['effect_type']
+				num = self.buffEffect(trigger_type, effect_type, buff_type, self.buff[buff_type], num)
+			if len(self.buff) == 0 : break
 		return num
+
+	#通过buff类型触发buff
+	def buffTriggerByBuffType(self, buff_type, num = 0):
+		trigger_type = Buff[buff_type]['trigger_type']
+		effect_type = Buff[buff_type]['effect_type']
+		if buff_type in self.buff:
+			buff_info = self.buff[buff_type]
+			num = self.buffEffect(trigger_type, effect_type, buff_type, buff_info, num)
+		return num
+
 	#buff效果生效
 	def buffEffect(self, trigger_type, effect_type, buff_type, info, num):
 		if effect_type == BuffEffectType.Attr:
@@ -293,9 +285,9 @@ class Role:
 				trigger_type == BuffTriggerType.NormalSelf or 
 				trigger_type == BuffTriggerType.Attack):
 				self.attrChange(attr_type, -info[0])
-			del self.buff[trigger_type][effect_type][buff_type]
+			del self.buff[buff_type]
 		else:
-			self.buff[trigger_type][effect_type][buff_type] = info
+			self.buff[buff_type] = info
 
 		if effect_type != BuffEffectType.Shield:
 			info[1] -= 1
@@ -501,8 +493,8 @@ class PCRScrimmage:
 
 		for iter_player_id in self.now_playing_players:	#每丢1次色子为一个回合
 			self.getPlayerObj(iter_player_id).attrChange(Attr.NOW_TP, ONE_ROUND_TP)
-			self.getPlayerObj(iter_player_id).buffTrigger(BuffTriggerType.Normal)
-			self.getPlayerObj(iter_player_id).buffTrigger(BuffTriggerType.Turn)
+			self.getPlayerObj(iter_player_id).buffTriggerByTriggerType(BuffTriggerType.Normal)
+			self.getPlayerObj(iter_player_id).buffTriggerByTriggerType(BuffTriggerType.Turn)
 
 		self.dice_num += 1
 		#每丢(场上玩家数量)次色子，所有玩家增加攻击距离和攻击力
@@ -784,8 +776,11 @@ class PCRScrimmage:
 				buff_text = buff_text.format(abs(buff_info[1]), buff_info[2] > 1000 and "无限" or buff_info[2] )
 				goal_player.addBuff(buff_info)
 				back_msg.append(f'{goal_player_name}获得buff《{buff_name}》，{buff_text}')
-			if EFFECT_BUFF_TRIGGER in skill_effect:
-				self.getPlayerObj(goal_player.user_id).buffTrigger(skill_effect[EFFECT_BUFF_TRIGGER])
+		
+		#立即触发特定buff
+		if EFFECT_BUFF_BY_BT in skill_effect:
+			for buffType in skill_effect[EFFECT_BUFF_BY_BT]:
+				self.getPlayerObj(goal_player.user_id).buffTriggerByBuffType(buffType)
 
 		#属性改变
 		if EFFECT_ATTR_CHANGE in skill_effect:
@@ -852,7 +847,7 @@ class PCRScrimmage:
 		addition_prop = skill_effect[EFFECT_HURT][3]					#加成比例
 		is_real 	  = skill_effect[EFFECT_HURT][4]					#是否是真实伤害
 
-		self.getPlayerObj(use_skill_player.user_id).buffTrigger(BuffTriggerType.Attack)
+		self.getPlayerObj(use_skill_player.user_id).buffTriggerByTriggerType(BuffTriggerType.Attack)
 		crit_flag = random.choice(range(0, MAX_CRIT)) < use_skill_player.attr[Attr.CRIT]
 
 		if addition_type != 0 and addition_prop != 0 :				#计算加成后的数值
@@ -892,8 +887,8 @@ class PCRScrimmage:
 			msg.append(f'[CQ:at,qq={player.user_id}]的丢色子阶段(发送 丢色子)')
 			await bot.send(ev, "\n".join(msg))
 		elif stage == NOW_STAGE_SKILL:
-			self.getPlayerObj(player.user_id).buffTrigger(BuffTriggerType.NormalSelf)
-			self.getPlayerObj(player.user_id).buffTrigger(BuffTriggerType.TurnSelf)
+			self.getPlayerObj(player.user_id).buffTriggerByTriggerType(BuffTriggerType.NormalSelf)
+			self.getPlayerObj(player.user_id).buffTriggerByTriggerType(BuffTriggerType.TurnSelf)
 			msg.append(f'[CQ:at,qq={player.user_id}]的放技能阶段：\n(发送技能编号，如需选择目标则@目标)')
 			skill_list = player.active_skills
 			skill_num = 0
@@ -1106,7 +1101,7 @@ PROCESS_WAIT_TIME = 1	#避免发送太快增加的缓冲时间
 STAGE_WAIT_TIME = 30	#玩家阶段等待时间，超过这个时间判负。
 						#实际时间是 STAGE_WAIT_TIME * WAIT_TIME
 
-@sv.on_fullmatch(('创建大乱斗'))
+@sv.on_fullmatch('创建大乱斗')
 async def game_create(bot, ev: CQEvent):
 	gid, uid = ev.group_id, ev.user_id
 
@@ -1161,7 +1156,7 @@ async def game_create(bot, ev: CQEvent):
 		else:
 			await bot.send(ev, f'游戏结束')
 
-@sv.on_fullmatch(('加入大乱斗'))
+@sv.on_fullmatch('加入大乱斗')
 async def game_join(bot, ev: CQEvent):
 	gid, uid = ev.group_id, ev.user_id
 	scrimmage = mgr.get_game(gid)
@@ -1182,7 +1177,7 @@ async def game_join(bot, ev: CQEvent):
 	if scrimmage.getPlayerNum() == MAX_PLAYER:
 		await bot.send(ev, f'人数已满，可开始游戏。\n（[CQ:at,qq={scrimmage.room_master}]发送“开始大乱斗”开始）')
 
-@sv.on_fullmatch(('开始大乱斗'))
+@sv.on_fullmatch('开始大乱斗')
 async def game_start(bot, ev: CQEvent):
 	gid, uid = ev.group_id, ev.user_id
 	scrimmage = mgr.get_game(gid)
