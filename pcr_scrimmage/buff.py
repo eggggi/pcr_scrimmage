@@ -28,7 +28,8 @@ class BuffEffectType(IntEnum):
 # （其实遵不遵守这个规矩都可以，保证不会重复就行了）
 # （不过也不排除以后会根据这个规则做判断 _(:з)∠)_ ）
 class BuffType(IntEnum):
-	TenRouHaDanKen		= 100001	#天楼霸断剑特殊buff
+	TenRouHaDanKen			= 100001	#天楼霸断剑特殊buff
+	Akriasworld				= 100002	#晶的特殊技能
 
 	NormalAttrAtkUp			= 10101
 	NormalAttrAtkDown		= 10102
@@ -41,6 +42,7 @@ class BuffType(IntEnum):
 	TurnAttrAtkDown			= 20102
 	TurnAttrHelDown			= 20103
 	TurnAttrHelDown2		= 20104
+	TurnAttrTPUp			= 20105
 
 	Shield					= 30201
 
@@ -58,6 +60,14 @@ Buff = {
 		'effect_type':BuffEffectType.Attr,
 
 		'attr_type':Attr.MAX_TP,
+	},
+	BuffType.Akriasworld:{
+		'name':'万物改造',
+		'text':'晶改造了战斗环境，大幅度增强了她的实力！',
+		'trigger_type':BuffTriggerType.NormalSelf,
+		'effect_type':BuffEffectType.Attr,
+
+		'attr_type':Attr.NOW_TP,
 	},
 
 	BuffType.NormalAttrAtkUp:{
@@ -140,6 +150,14 @@ Buff = {
 		'effect_type':BuffEffectType.Attr,
 
 		'attr_type':Attr.NOW_HEALTH,
+	},
+	BuffType.TurnAttrTPUp:{
+		'name':'上升领域',
+		'text':'每回合永久增加{0}点TP，持续{1}个玩家回合',
+		'trigger_type':BuffTriggerType.Turn,
+		'effect_type':BuffEffectType.Attr,
+
+		'attr_type':Attr.NOW_TP,
 	},
 
 	BuffType.Shield:{

@@ -52,12 +52,14 @@
 
 
 
-EFFECT_HURT = "hurt"					#造成伤害	tuple元组 (数值，加成类型，加成的数值对象，加成比例，是否为真实伤害)
+EFFECT_HURT			= "hurt"			#造成伤害	tuple元组 (数值，加成类型，加成的数值对象，加成比例，是否为真实伤害)
 										#加成类型：attr.py , 为0时无加成; 加成的数值对象：0自己 1目标
-EFFECT_ELIMINATE = "eliminate"			#斩杀效果，目标生命值越低造成的伤害越高		tuple元组 (目标生命值降低比例, 伤害数值)
-										#EFFECT_ELIMINATE需要EFFECT_HURT作为前置
-EFFECT_LIFESTEAL = "life_steal"			#生命偷取	float 伤害-生命值之间的转换比例
-										#EFFECT_LIFESTEAL需要EFFECT_HURT作为前置
+
+										#需要EFFECT_HURT作为前置	↓
+EFFECT_ELIMINATE	= "eliminate"		#斩杀效果，目标生命值越低造成的伤害越高		tuple元组 (目标生命值降低比例, 伤害数值)
+EFFECT_STAND		= "stand"			#背水效果，自身生命值越低造成的伤害越高		tuple元组 (自身生命值降低比例, 伤害数值)
+EFFECT_LIFESTEAL	= "life_steal"		#生命偷取	float 伤害-生命值之间的转换比例
+										#需要EFFECT_HURT作为前置	↑
 
 EFFECT_BUFF = "buff"					#buff效果		list[tuple,tuple] [(BuffType.xx, 数值, 可触发次数), (...)]
 EFFECT_BUFF_BY_BT = "buff_by_bt"		#buff效果触发(通过buff类型)	list[BuffType]		立即触发指定buff类型的buff效果
@@ -94,13 +96,13 @@ from .buff import BuffType, BuffTriggerType
 ROLE = {
 	#注意：id要和_pcr_data.py里对应角色一样
 	1068:{
-		"name":"晶(beta α)",
+		"name":"晶",
 
-		"health":1250,
+		"health":1300,
 		"distance":9,
-		"attack":70,
+		"attack":50,
 		"defensive":100,
-		"crit":15,
+		"crit":5,
 		"tp":0,
 
 		"active_skills" : [
@@ -116,53 +118,62 @@ ROLE = {
 				}
 			},
 			{
-				"name":"热身!",
-				"text":"热身！:增加自己80攻击力、15%的暴击率持续4回合,并减少周围角色10点永久攻击力。\n",
+				"name":"热身!/加速！",
+				"text":"热身！:增加自己80攻击力、15%的暴击率持续4回合。\n "+
+				       "\t加速！:永久增加自己100点攻击、20%的暴击率，并展开+10TP上升领域3回合。",
 				"tp_cost":20,
 				"trigger": TRIGGER_ME,
-				"passive":[0],
+				"passive":[],
 				"effect":{
 					EFFECT_BUFF:[
 						(BuffType.NormalAttrAtkUp, 80, 4),
-						(BuffType.NormalAttrCritUp, 15, 4)
+						(BuffType.NormalAttrCritUp, 15, 4),
 					],
+					EFFECT_SKILL_CHANGE:(BuffType.Akriasworld, [0]),
 				}
 			},
 			{
 				"name":"岩石穿刺",
-				"text":"岩石穿刺！:降低目标玩家100点防御力，持续4个玩家回合，并造成80(+1.5自身攻击力),造成伤害的15%转为生命值。 \n",
+				"text":"岩石穿刺！:永久降低目标玩家20点防御力，并造成100(+0.8自身攻击力),造成伤害的10%转为生命值；如果已释放万物改造，则该技能将额外永久降低玩家20点攻击力，且伤害变更为纯粹，拥有20%的伤害吸血。\n",
 				"tp_cost":30,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[],
 				"effect":{
-					EFFECT_BUFF:[(BuffType.NormalAttrDefDown, -100, 4)],
-					EFFECT_HURT:(80, Attr.ATTACK, 0, 1.5, False),
-					EFFECT_LIFESTEAL:0.15,
+					EFFECT_ATTR_CHANGE:[(Attr.DEFENSIVE, 20, 0, 0)],
+					EFFECT_HURT:(100, Attr.ATTACK, 0, 0.8, False),
+					EFFECT_LIFESTEAL:0.10,
+					EFFECT_SKILL_CHANGE:(BuffType.Akriasworld, [3])
 				}
 			},
 			{
-				"name":"万物改造",
-				"text":"使用七冠权力，大幅提升自身属性，并降低其他玩家防御力，回复30TP后继续1回合。",
+				"name":"万物改造/万物归灵",
+				"text":"使用七冠权力，大幅提升自身属性，并降低其他玩家防御力，回复30TP后继续1回合。"+
+					   "\t万物归灵:晶将所贮存的能量一并释放，并造成0(+3.0自身攻击力)的纯粹伤害，并回复自身大量的生命值。",
 				"tp_cost":100,
 				"trigger": TRIGGER_ME,
 				"passive":[1],
 				"effect":{
 					EFFECT_ATTR_CHANGE:[(Attr.NOW_TP, 30, 0, 0)],
 					EFFECT_BUFF:[
+						(BuffType.Akriasworld, 0, 99999),
 						(BuffType.NormalAttrAtkUp, 200, 99999),
 						(BuffType.NormalAttrCritUp, 25, 99999),
-						(BuffType.NormalAttrDefUp, 30, 99999)
+						(BuffType.NormalAttrDefUp, 30, 99999),
 					],
-					EFFECT_LOCKTURN:1
+					EFFECT_LOCKTURN:1,
+					EFFECT_SKILL_CHANGE:(BuffType.Akriasworld, [4])
 				}
 			}
 		],
 		"passive_skills": [
 			{
-				"trigger": TRIGGER_SELECT_EXCEPT_ME,
+				"trigger": TRIGGER_ME,
 				"effect":{
-					EFFECT_ATTR_CHANGE:[(Attr.ATTACK, -10, 0, 0)],
-					EFFECT_AOE:(3, False),
+					EFFECT_BUFF:[(BuffType.TurnAttrTPUp, 10, 3)],
+					EFFECT_ATTR_CHANGE:[
+						(Attr.ATTACK, 100, 0, 0),
+						(Attr.CRIT, 20, 0, 0)
+					],
 				}
 			},
 			{
@@ -176,7 +187,25 @@ ROLE = {
 				"effect":{
 					EFFECT_ATTR_CHANGE:[(Attr.NOW_TP, 10, 0, 0)],
 				}
-			}
+			},
+			{
+				"trigger": TRIGGER_SELECT_EXCEPT_ME,
+				"effect":{
+					EFFECT_HURT:(100, Attr.ATTACK, 0, 0.8, True),
+					EFFECT_LIFESTEAL:0.2,
+					EFFECT_ATTR_CHANGE:[
+						(Attr.DEFENSIVE, -20, 0, 0),
+						(Attr.ATTACK, -20, 0, 0)
+					],
+				}
+			},
+			{
+				"trigger": TRIGGER_ALL_EXCEPT_ME,
+				"effect":{
+					EFFECT_HURT:(0, Attr.ATTACK, 0, 3.0, True),
+					EFFECT_LIFESTEAL:5,
+				}
+			},
 		]
 	},
 	1061:{
@@ -195,7 +224,7 @@ ROLE = {
 				"text":"对目标造成0(+1.0自身攻击力)伤害,并回复3点TP",
 				"tp_cost":0,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
-				"passive":[4],
+				"passive":[3],
 
 				"effect":{
 					EFFECT_HURT:(0, Attr.ATTACK, 0, 1, False)
@@ -573,7 +602,7 @@ ROLE = {
 	1044:{
 		"name":"伊莉亚",
 		"health":1280,
-		"distance":7,
+		"distance":6,
 		"attack":180,
 		"defensive":40,
 		"crit":25,
@@ -606,28 +635,28 @@ ROLE = {
 			},
 			{
 				"name":"血腥之矛",
-				"text":"对目标及其半径4范围内的所有玩家造成140(+0.5自身攻击力)的真实伤害,并回复所造成伤害25%生命值,且对自身造成45(+0.8攻击力)伤害",
+				"text":"对目标及其半径3范围内的所有玩家造成120(+0.5自身攻击力)的真实伤害,并回复所造成伤害25%生命值,且对自身造成45(+0.8攻击力)伤害",
 				"tp_cost":20,
 				"trigger":TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[2],
 				
 				"effect":{
-					EFFECT_AOE:(4, False),
-					EFFECT_HURT:(140, Attr.ATTACK, 0, 0.5, True),
+					EFFECT_AOE:(3, False),
+					EFFECT_HURT:(120, Attr.ATTACK, 0, 0.5, True),
 					EFFECT_LIFESTEAL:0.25
 				}
 			},
 			{
 				"name":"朱色之噬",
-				"text":"对目标及其半径3范围内除自己外的所有玩家造成150(+1.2自身攻击力)的真实伤害,并回复所造成伤害60%生命值",
+				"text":"对目标及其半径3范围内除自己外的所有玩家造成120(+1.0自身攻击力)的真实伤害,并回复所造成伤害75%生命值",
 				"tp_cost":60,
 				"trigger":TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[],
 
 				"effect":{
 					EFFECT_AOE:(3, False),
-					EFFECT_HURT:(150, Attr.ATTACK, 0, 1.2, True),
-					EFFECT_LIFESTEAL:0.6,
+					EFFECT_HURT:(120, Attr.ATTACK, 0, 1.0, True),
+					EFFECT_LIFESTEAL:0.75,
 				}
 			}
 		],
@@ -654,8 +683,8 @@ ROLE = {
 	},
 	1038:{
 		"name":"栞",
-		"health":825,
-		"distance":10,
+		"health":875,
+		"distance":12,
 		"attack":80,
 		"defensive":60,
 		"crit":5,

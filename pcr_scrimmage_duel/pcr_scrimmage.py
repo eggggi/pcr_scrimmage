@@ -32,10 +32,14 @@ from .attr import Attr, AttrTextChange
 from .buff import BuffEffectType, BuffTriggerType, Buff
 from .runway_case import (CASE_NONE, CASE_ATTACK, CASE_DEFENSIVE, CASE_HEALTH, 
 						  CASE_MOVE, CASE_TP, RUNWAY_CASE)
-from .role import (EFFECT_BUFF, EFFECT_BUFF_BY_BT, EFFECT_HIT_BACK, EFFECT_SKILL_CHANGE, ROLE, EFFECT_LOCKTURN,
+from .role import (EFFECT_BUFF, EFFECT_BUFF_BY_BT, EFFECT_HIT_BACK, EFFECT_SKILL_CHANGE,
+				   EFFECT_STAND, ROLE, EFFECT_LOCKTURN,
 				   EFFECT_HURT, EFFECT_ATTR_CHANGE, EFFECT_MOVE, EFFECT_MOVE_GOAL, EFFECT_LIFESTEAL,
 				   EFFECT_OUT_TP, EFFECT_OUT_LOCKTURN, EFFECT_IGNORE_DIST, EFFECT_AOE, EFFECT_ELIMINATE,
 				   TRIGGER_ME, TRIGGER_ALL_EXCEPT_ME, TRIGGER_ALL, TRIGGER_SELECT, TRIGGER_SELECT_EXCEPT_ME, TRIGGER_NEAR)
+
+from .get_gold import (ScoreCounter, daily_card_limiter, 
+						MAX_GUESS_NUM, GOLD_DICT)
 
 sv = Service(	'pcr_scrimmage',
 				manage_priv=priv.ADMIN,
@@ -149,11 +153,12 @@ class Role:
 		}
 		'''
 
-		self.now_location = 0	#当前位置
+		self.now_location = 0				#当前位置
 		self.now_stage = NOW_STAGE_WAIT		#当前处于什么阶段
+		self.skip_turn = 0					#跳过x回合
 
-		self.active_skills = []			#技能列表
-		self.passive_skills = []		#被动列表
+		self.active_skills = []				#技能列表
+		self.passive_skills = []			#被动列表
 
 	#选择角色后对数据的初始化
 	def initData(self, role_id, role_info, room_obj):
@@ -246,7 +251,10 @@ class Role:
 
 	#通过触发类型触发buff
 	def buffTriggerByTriggerType(self, trigger_type, num = 0):
-		for buff_type in self.buff.keys():
+		buff_keys = []
+		for keys in self.buff.keys():
+			buff_keys.append(keys)
+		for buff_type in buff_keys:
 			need_trigger_type = Buff[buff_type]['trigger_type']
 			if need_trigger_type == trigger_type:
 				effect_type = Buff[buff_type]['effect_type']
@@ -444,7 +452,7 @@ class PCRScrimmage:
 	
 	#回合改变，到下一个玩家
 	def turnChange(self):
-		now_turn_player = self.getNowTurnPlayerObj()
+		now_turn_player:Role = self.getNowTurnPlayerObj()
 		if now_turn_player.now_stage != NOW_STAGE_OUT:#如果当前玩家已经出局，则不改变状态
 			now_turn_player.stageChange(NOW_STAGE_WAIT)#已结束的玩家
 		else:
@@ -457,20 +465,29 @@ class PCRScrimmage:
 			self.now_statu == NOW_STATU_END):
 			return
 		
+		skip_flag = False
 		#寻找下一回合的玩家
 		for i in range(len(self.player_list)):
 			self.now_turn += 1
 			if self.now_turn >= len(self.player_list):
 				self.now_turn = 0
 			next_turn_player = self.getNowTurnPlayerObj()#下一个玩家
-			if next_turn_player.now_stage != NOW_STAGE_OUT:#跳过已出局的玩家
-				if self.lock_turn > 0:#检查是否锁定了当前回合
+			if next_turn_player.skip_turn > 0:	#跳过被眩晕的玩家
+				next_turn_player.skip_turn -= 1
+				skip_flag = True
+				continue
+			if next_turn_player.now_stage != NOW_STAGE_OUT:	#跳过已出局的玩家
+				if self.lock_turn > 0:	#检查是否锁定了当前回合
 					now_turn_player.stageChange(NOW_STAGE_DICE)
 					self.now_turn = now_turn_player.player_num
 					self.lock_turn -= 1
 					return
 				next_turn_player.stageChange(NOW_STAGE_DICE)
 				return
+			if skip_flag:	#如果检测到有跳过眩晕玩家，则重新循环
+				i = 0
+				skip_flag = False
+
 		#找不到直接结束游戏
 		self.now_statu = NOW_STATU_END
 	
@@ -865,6 +882,11 @@ class PCRScrimmage:
 			cons_prop = 1 - goal_player.attr[Attr.NOW_HEALTH] / goal_player.attr[Attr.MAX_HEALTH]
 			real_prop = cons_prop / skill_effect[EFFECT_ELIMINATE][0]
 			num += real_prop * 100 * skill_effect[EFFECT_ELIMINATE][1]
+		#背水效果
+		if EFFECT_STAND in skill_effect:
+			cons_prop = 1 - use_skill_player.attr[Attr.NOW_HEALTH] / use_skill_player.attr[Attr.MAX_HEALTH]
+			real_prop = cons_prop / skill_effect[EFFECT_STAND][0]
+			num += real_prop * 100 * skill_effect[EFFECT_STAND][1]
 		#生命偷取
 		if EFFECT_LIFESTEAL in skill_effect:
 			steal_prop = skill_effect[EFFECT_LIFESTEAL]
