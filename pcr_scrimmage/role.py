@@ -234,7 +234,7 @@ ROLE = {
 				"name":"吓到你发抖！/ 天楼回刃斩",
 				"text":("吓到你发抖！:对目标造成50(+0.8自身攻击力)伤害，并降低30点攻击力持续3玩家回合，且将其击退5步 \n" + 
 						"\t天楼回刃斩：对目标造成125(+1.25自身攻击力)伤害，并将造成伤害的12%转化为生命值"),
-				"tp_cost":30,
+				"tp_cost":20,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[],
 				"effect":{
@@ -290,8 +290,8 @@ ROLE = {
 				"effect":{
 					EFFECT_BUFF:[(BuffType.TenRouHaDanKen, 0, 99999),
 								(BuffType.NormalAttrAtkUp, 120, 99999),
-								(BuffType.NormalAttrCritUp, 20, 99999),
-								(BuffType.NormalAttrMaxHelUp, 250, 99999)],
+								(BuffType.NormalAttrCritUp, 30, 99999),
+								(BuffType.NormalAttrMaxHelUp, 300, 99999)],
 					EFFECT_ATTR_CHANGE:[(Attr.NOW_TP, 100, 0, 0)],
 					EFFECT_BUFF_BY_BT:[ BuffType.NormalAttrAtkUp,
 										BuffType.NormalAttrCritUp,
@@ -353,12 +353,12 @@ ROLE = {
 			},
 			{
 				"name":"格林爆裂",
-				"text":"对所有人造成100(+2.25自身攻击力)真实伤害",
+				"text":"对所有人造成100(+2.00自身攻击力)真实伤害",
 				"tp_cost":60,
 				"trigger": TRIGGER_ALL_EXCEPT_ME,
 				"passive":[],
 				"effect":{
-					EFFECT_HURT:(100, Attr.ATTACK, 0, 2.25, True),
+					EFFECT_HURT:(100, Attr.ATTACK, 0, 2.00, True),
 				}
 			}
 		],
@@ -518,7 +518,7 @@ ROLE = {
 	},
 	1052:{
 		"name":"莉玛",
-		"health":2000,
+		"health":1700,
 		"distance":5,
 		"attack":0,
 		"defensive":160,
@@ -828,51 +828,51 @@ ROLE = {
 		"active_skills":[
 			{
 				"name":"肉蛋葱鸡",
-				"text":"无视距离，向离自己最近的目标移动3步，并对目标造成0(+1.2自身防御力)伤害",
+				"text":"无视距离，向离自己最近的目标移动3步，并对目标造成0(+0.8自身防御力)伤害",
 				"tp_cost":10,
 				"trigger": TRIGGER_NEAR,
 				"passive":[0],
 
 				"effect":{
-					EFFECT_HURT:(0, Attr.DEFENSIVE, 0, 1.2, False)
+					EFFECT_HURT:(0, Attr.DEFENSIVE, 0, 0.8, False)
 				}
 			},
 			{
 				"name":"护盾",
-				"text":"为自己增加一个350点生命值的护盾（只可触发1次），并增加25点防御力",
+				"text":"为自己增加一个350点生命值的护盾（只可触发1次），并增加20点防御力",
 				"tp_cost":20,
 				"trigger": TRIGGER_ME,
 				"passive":[],
 
 				"effect":{
 					EFFECT_BUFF:[(BuffType.Shield, 350, 1)],
-					EFFECT_ATTR_CHANGE:[(Attr.DEFENSIVE, 25, 0, 0)],
+					EFFECT_ATTR_CHANGE:[(Attr.DEFENSIVE, 20, 0, 0)],
 				}
 			},
 			{
 				"name":"月下独酌",
-				"text":"自身增加30TP, 并恢复自身防御力70%的生命值",
+				"text":"自身增加30TP, 并恢复自身防御力60%的生命值",
 				"tp_cost":20,
 				"trigger":TRIGGER_ME,
 				"passive":[],
 				
 				"effect":{
 					EFFECT_ATTR_CHANGE:[
-						(Attr.NOW_HEALTH, 0, Attr.DEFENSIVE, 0.7),
+						(Attr.NOW_HEALTH, 0, Attr.DEFENSIVE, 0.6),
 						(Attr.NOW_TP, 50, 0, 0)],
 				},
 			},
 			{
 				"name":"第七天堂",
-				"text":"提升全体40防御,回复全体根据自身防御90%生命值,自身额外提升60防御和200生命值",
+				"text":"提升全体80防御,回复全体根据自身防御100%生命值,自身额外提升40防御和200生命值",
 				"tp_cost":80,
 				"trigger":TRIGGER_ALL,
 				"passive":[1],
 
 				"effect":{
 					EFFECT_ATTR_CHANGE:[
-						(Attr.NOW_HEALTH, 0, Attr.DEFENSIVE, 0.9),
-						(Attr.DEFENSIVE, 40, 0, 0)],
+						(Attr.NOW_HEALTH, 0, Attr.DEFENSIVE, 1.0),
+						(Attr.DEFENSIVE, 80, 0, 0)],
 				},
 			}
 		],
@@ -887,7 +887,7 @@ ROLE = {
 				"trigger": TRIGGER_ME,
 				"effect":{
 					EFFECT_ATTR_CHANGE:[
-						(Attr.DEFENSIVE, 60, 0, 0),
+						(Attr.DEFENSIVE, 40, 0, 0),
 						(Attr.NOW_HEALTH,200, 0, 0)],
 				},
 			}
@@ -1148,7 +1148,7 @@ ROLE = {
 		"health":1200,
 		"distance":10,
 		"attack":100,
-		"defensive":175,
+		"defensive":300,
 		"crit":10,
 		"tp":0,
 
@@ -1366,13 +1366,14 @@ ROLE = {
 			},
 			{
 				"name":"日和莉烈焰冲击",
-				"text":"对目标造成300(+2.0自身攻击力)伤害，若目标被击倒，自身回复70点tp并继续下一回合",
+				"text":"对目标造成300(+2.0自身攻击力)伤害，并将造成伤害的30%转化为生命值。若目标被击倒，自身回复70点tp并继续下一回合",
 				"tp_cost":100,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[],
 
 				"effect":{
 					EFFECT_HURT:(300, Attr.ATTACK, 0, 2, False),
+					EFFECT_LIFESTEAL:0.3,
 					EFFECT_OUT_TP:70,
 					EFFECT_OUT_LOCKTURN:1
 				}

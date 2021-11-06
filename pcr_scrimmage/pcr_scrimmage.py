@@ -315,12 +315,10 @@ class Role:
 		]
 		if len(self.buff) != 0:
 			msg.append('\nbuff效果列表:')
-			for _, buff_effect_infos in self.buff.items():
-				for _, buff_infos in buff_effect_infos.items():
-					for buff_type, info in buff_infos.items():
-						buff_text:str = Buff[buff_type]['text']
-						buff_text = buff_text.format(abs(info[0]), info[1] == 0 and 1 or (info[1] > 10000 and "无限" or info[1]))
-						msg.append(f'{Buff[buff_type]["name"]}:{buff_text}')
+			for buff_type, buff_info in self.buff.items():
+				buff_text:str = Buff[buff_type]['text']
+				buff_text = buff_text.format(abs(buff_info[0]), buff_info[1] == 0 and 1 or (buff_info[1] > 10000 and "无限" or buff_info[1]))
+				msg.append(f'{Buff[buff_type]["name"]}:{buff_text}')
 		return msg
 
 
@@ -630,11 +628,7 @@ class PCRScrimmage:
 		if EFFECT_SKILL_CHANGE in skill_effect:
 			buff_type = skill_effect[EFFECT_SKILL_CHANGE][0]
 			new_skill_goal = skill_effect[EFFECT_SKILL_CHANGE][1]
-			buff_trigger_type = Buff[buff_type]['trigger_type']
-			buff_effeffect_type =  Buff[buff_type]['effect_type']
-			if (buff_trigger_type in use_skill_player.buff and
-				buff_effeffect_type in use_skill_player.buff[buff_trigger_type] and 
-				buff_type in use_skill_player.buff[buff_trigger_type][buff_effeffect_type]):
+			if buff_type in use_skill_player.buff :
 				for skill_id in new_skill_goal :
 					ret, msg = self.skillTrigger(use_skill_player, goal_player_id, skill_id, True, back_msg)
 					if ret == RET_ERROR : return ret, msg
@@ -1236,7 +1230,7 @@ async def select_role(bot, ev: CQEvent):
 			await asyncio.sleep(PROCESS_WAIT_TIME)
 			scrimmage.now_statu = NOW_STATU_OPEN
 
-@sv.on_fullmatch(('扔色子','扔骰子','丢色子','丢骰子','丢','扔'))
+@sv.on_fullmatch('扔色子','扔骰子','丢色子','丢骰子','丢','扔')
 async def throw_dice(bot, ev: CQEvent):
 	gid, uid = ev.group_id, ev.user_id
 
@@ -1294,8 +1288,15 @@ async def use_skill(bot, ev: CQEvent):
 	else:
 		skill_id = '0'
 		goal_player_id = '0'
+	
+	goal_player_id = int(goal_player_id)
+	skill_id = int(skill_id)
 
-	ret = await scrimmage.useSkill(int(skill_id), uid, int(goal_player_id), bot, ev)
+	if goal_player_id != 0 and goal_player_id not in scrimmage.player_list:
+		await bot.send(ev, "不能选择场外玩家")
+		return
+
+	ret = await scrimmage.useSkill(skill_id, uid, goal_player_id, bot, ev)
 	if ret == RET_ERROR:
 		return
 
@@ -1306,7 +1307,7 @@ async def use_skill(bot, ev: CQEvent):
 	await asyncio.sleep(PROCESS_WAIT_TIME)
 	await scrimmage.stageRemind(bot, ev)
 
-@sv.on_fullmatch(('认输','投降','不玩了'))
+@sv.on_fullmatch('认输','投降','不玩了')
 async def throw_dice(bot, ev: CQEvent):
 	gid, uid = ev.group_id, ev.user_id
 
@@ -1335,7 +1336,7 @@ async def throw_dice(bot, ev: CQEvent):
 	
 
 	
-@sv.on_fullmatch(('查看属性'))
+@sv.on_fullmatch('查看属性')
 async def check_property(bot, ev: CQEvent):
 	gid, uid = ev.group_id, ev.user_id
 
@@ -1375,7 +1376,7 @@ async def check_role(bot, ev: CQEvent):
 
 	await bot.send(ev, '不存在的角色')
 
-@sv.on_fullmatch(('结束大乱斗'))
+@sv.on_fullmatch('结束大乱斗')
 async def game_end(bot, ev: CQEvent):
 	gid, uid = ev.group_id, ev.user_id
 
@@ -1388,7 +1389,7 @@ async def game_end(bot, ev: CQEvent):
 	scrimmage.now_statu = NOW_STATU_END
 	await bot.send(ev, f"您已强制结束大乱斗，请等待结算")
 
-@sv.on_fullmatch(('PCR大乱斗','pcr大乱斗','大乱斗帮助','PCR大乱斗帮助','pcr大乱斗帮助'))
+@sv.on_fullmatch('PCR大乱斗','pcr大乱斗','大乱斗帮助','PCR大乱斗帮助','pcr大乱斗帮助')
 async def game_help(bot, ev: CQEvent):
 	msg = '''《PCR大乱斗帮助》
 	基础命令：
@@ -1421,7 +1422,7 @@ async def game_help(bot, ev: CQEvent):
 '''
 	await bot.send(ev, msg)
 
-@sv.on_fullmatch(('大乱斗规则'))
+@sv.on_fullmatch('大乱斗规则')
 async def game_help_all_role(bot, ev: CQEvent):
 	msg = '''《PCR大乱斗规则》
 1、和大富翁类似，一个正方形环形跑道，跑道上有多个事件，通过丢色子走到特定的位置触发事件
@@ -1438,7 +1439,7 @@ async def game_help_all_role(bot, ev: CQEvent):
 '''
 	await bot.send(ev, msg)
 
-@sv.on_fullmatch(('大乱斗角色'))
+@sv.on_fullmatch('大乱斗角色')
 async def game_help_rule(bot, ev: CQEvent):
 	msg = '当前可选角色有：\n'
 	for role in ROLE.values():
