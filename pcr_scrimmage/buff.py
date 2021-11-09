@@ -43,6 +43,7 @@ class BuffType(IntEnum):
 	TurnAttrHelDown			= 20103
 	TurnAttrHelDown2		= 20104
 	TurnAttrTPUp			= 20105
+	TurnAttrDefDown			= 20106
 
 	Shield					= 30201
 
@@ -51,15 +52,16 @@ class BuffType(IntEnum):
 	TurnSelfAttrCritUp		= 50101
 
 	AttackAttrCritUp		= 60101
+	AttackAttrCritHurtUp	= 60102
 
 Buff = {
 	BuffType.TenRouHaDanKen:{
 		'name':'天楼霸断剑',
-		'text':'矛依未拔出了她的大剑，改变技能组，持续全场',
+		'text':'矛依未拔出了她的大剑，改变技能组并提升{0}点攻击距离，持续全场',
 		'trigger_type':BuffTriggerType.NormalSelf,
 		'effect_type':BuffEffectType.Attr,
 
-		'attr_type':Attr.MAX_TP,
+		'attr_type':Attr.DISTANCE,
 	},
 	BuffType.Akriasworld:{
 		'name':'万物改造',
@@ -159,6 +161,15 @@ Buff = {
 
 		'attr_type':Attr.NOW_TP,
 	},
+	BuffType.TurnAttrDefDown:{
+		'name':'腐蚀',
+		'text':'每回合降低{0}点防御力，持续{1}个玩家回合',
+		'trigger_type':BuffTriggerType.Turn,
+		'effect_type':BuffEffectType.Attr,
+
+		'attr_type':Attr.DEFENSIVE,
+	},
+
 
 	BuffType.Shield:{
 		'name':'护盾',
@@ -192,5 +203,13 @@ Buff = {
 		'effect_type':BuffEffectType.Attr,
 
 		'attr_type':Attr.CRIT,
+	},
+	BuffType.AttackAttrCritHurtUp:{
+		'name':'夺命一击',
+		'text':'下次攻击增加{0}暴击伤害，可触发{1}次',
+		'trigger_type':BuffTriggerType.Attack,
+		'effect_type':BuffEffectType.Attr,
+
+		'attr_type':Attr.CRIT_HURT,
 	},
 }

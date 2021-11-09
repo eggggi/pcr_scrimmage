@@ -32,7 +32,7 @@ from .attr import Attr, AttrTextChange
 from .buff import BuffEffectType, BuffTriggerType, Buff
 from .runway_case import (CASE_NONE, CASE_ATTACK, CASE_DEFENSIVE, CASE_HEALTH, 
 						  CASE_MOVE, CASE_TP, RUNWAY_CASE)
-from .role import (EFFECT_BUFF, EFFECT_BUFF_BY_BT, EFFECT_HIT_BACK, EFFECT_SKILL_CHANGE,
+from .role import (EFFECT_BUFF, EFFECT_BUFF_BY_BT, EFFECT_DIZZINESS, EFFECT_HIT_BACK, EFFECT_SKILL_CHANGE,
 				   EFFECT_STAND, ROLE, EFFECT_LOCKTURN,
 				   EFFECT_HURT, EFFECT_ATTR_CHANGE, EFFECT_MOVE, EFFECT_MOVE_GOAL, EFFECT_LIFESTEAL,
 				   EFFECT_OUT_TP, EFFECT_OUT_LOCKTURN, EFFECT_IGNORE_DIST, EFFECT_AOE, EFFECT_ELIMINATE,
@@ -239,6 +239,10 @@ class Role:
 	def stageChange(self, stage):
 		self.now_stage = stage
 
+	#眩晕x回合
+	def dizziness(self, turn):
+		self.skip_turn = turn
+
 	#被攻击
 	def beHurt(self, num):
 		num = self.buffTriggerByTriggerType(BuffTriggerType.Hurt, num)
@@ -293,7 +297,8 @@ class Role:
 				trigger_type == BuffTriggerType.NormalSelf or 
 				trigger_type == BuffTriggerType.Attack):
 				self.attrChange(attr_type, -info[0])
-			del self.buff[buff_type]
+			if buff_type in self.buff:
+				del self.buff[buff_type]
 		else:
 			self.buff[buff_type] = info
 
@@ -464,8 +469,9 @@ class PCRScrimmage:
 			return
 		
 		skip_flag = False
+		i = 0
 		#寻找下一回合的玩家
-		for i in range(len(self.player_list)):
+		while (i < len(self.player_list)):
 			self.now_turn += 1
 			if self.now_turn >= len(self.player_list):
 				self.now_turn = 0
@@ -485,6 +491,7 @@ class PCRScrimmage:
 			if skip_flag:	#如果检测到有跳过眩晕玩家，则重新循环
 				i = 0
 				skip_flag = False
+			i += 1
 
 		#找不到直接结束游戏
 		self.now_statu = NOW_STATU_END
@@ -844,6 +851,12 @@ class PCRScrimmage:
 				num = skill_effect[EFFECT_OUT_LOCKTURN]
 				self.lock_turn = num
 				back_msg.append(f'{use_player_name}锁定了{num}回合')
+
+		#眩晕效果	
+		if EFFECT_DIZZINESS in skill_effect:
+			num = skill_effect[EFFECT_DIZZINESS]
+			goal_player.dizziness(num)
+			back_msg.append(f'{goal_player_name}被眩晕{num}回合')
 
 		if len(back_msg) == 0:
 			back_msg.append('什么都没发生')
