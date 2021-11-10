@@ -249,13 +249,27 @@ class Role:
 	#添加buff
 	def addBuff(self, buff_info):
 		self.buff[buff_info[0]] = [buff_info[1], buff_info[2], 0]
-
-	#通过触发类型触发buff
-	def buffTriggerByTriggerType(self, trigger_type, num = 0):
+	#删除buff（不要在迭代self.buff时调用）
+	def deleteBuff(self, buff_type):
+		if buff_type in self.buff:
+			trigger_type = Buff[buff_type]['trigger_type']
+			if (trigger_type == BuffTriggerType.Normal or 
+				trigger_type == BuffTriggerType.NormalSelf or 
+				trigger_type == BuffTriggerType.Attack) and 'attr_type' in Buff[buff_type]:
+				self.attrChange(Buff[buff_type]['attr_type'], -self.buff[buff_type][0])
+			del self.buff[buff_type]
+	#删除失效buff
+	def deleteInvalidBuff(self):
 		buff_keys = []
 		for keys in self.buff.keys():
 			buff_keys.append(keys)
 		for buff_type in buff_keys:
+			if self.buff[buff_type][1] == 0 :
+				self.deleteBuff(buff_type)
+
+	#通过触发类型触发buff
+	def buffTriggerByTriggerType(self, trigger_type, num = 0):
+		for buff_type in self.buff.keys():
 			need_trigger_type = Buff[buff_type]['trigger_type']
 			if need_trigger_type == trigger_type:
 				effect_type = Buff[buff_type]['effect_type']
@@ -287,20 +301,10 @@ class Role:
 		elif effect_type == BuffEffectType.Shield:
 			num += info[0]
 			if num > 0:num = 0
-			info[1] -= 1
-		
-		if info[1] <= 0 : 
-			if (trigger_type == BuffTriggerType.Normal or 
-				trigger_type == BuffTriggerType.NormalSelf or 
-				trigger_type == BuffTriggerType.Attack):
-				self.attrChange(attr_type, -info[0])
-			if buff_type in self.buff:
-				del self.buff[buff_type]
-		else:
-			self.buff[buff_type] = info
 
-		if effect_type != BuffEffectType.Shield:
-			info[1] -= 1
+		info[1] -= 1
+		self.buff[buff_type] = info
+
 		return num
 
 
@@ -511,9 +515,14 @@ class PCRScrimmage:
 		player.locationChange(step, self.runway)
 
 		for iter_player_id in self.now_playing_players:	#每丢1次色子为一个回合
-			self.getPlayerObj(iter_player_id).attrChange(Attr.NOW_TP, ONE_ROUND_TP)
-			self.getPlayerObj(iter_player_id).buffTriggerByTriggerType(BuffTriggerType.Normal)
-			self.getPlayerObj(iter_player_id).buffTriggerByTriggerType(BuffTriggerType.Turn)
+			iter_player = self.getPlayerObj(iter_player_id)
+			iter_player.attrChange(Attr.NOW_TP, ONE_ROUND_TP)
+			iter_player.deleteInvalidBuff()
+			iter_player.buffTriggerByTriggerType(BuffTriggerType.Normal)
+			iter_player.buffTriggerByTriggerType(BuffTriggerType.Turn)
+			if iter_player_id == player_id:
+				player.buffTriggerByTriggerType(BuffTriggerType.NormalSelf)
+				player.buffTriggerByTriggerType(BuffTriggerType.TurnSelf)
 
 		self.dice_num += 1
 		#每丢(场上玩家数量)次色子，所有玩家增加攻击距离和攻击力
@@ -592,7 +601,8 @@ class PCRScrimmage:
 		if skill_id != 0:
 			use_player_obj = self.getPlayerObj(use_player_id)
 			if skill_id > len(use_player_obj.active_skills) or skill_id <= 0:
-				return await bot.send(ev, '技能编号不正确')
+				await bot.send(ev, '技能编号不正确')
+				return RET_ERROR
 			
 			real_skill_id = skill_id - 1	#实际技能id
 			skill = use_player_obj.active_skills[real_skill_id]
@@ -617,8 +627,6 @@ class PCRScrimmage:
 				return ret
 			await bot.send(ev, '\n'.join(back_msg))
 			
-		self.turnChange()	#回合切换
-		self.refreshNowImageStatu()	#刷新当前显示状态
 		return RET_SCUESS
 	
 	#技能释放对象选择
@@ -807,7 +815,8 @@ class PCRScrimmage:
 				text = AttrTextChange(attr_type)
 
 				if addition_type != 0 and addition_prop != 0 :
-					num = math.floor(num + goal_player.attr[addition_type] * addition_prop)	#计算加成后的数值
+					add = goal_player.attr[addition_type] * addition_prop
+					num = math.floor(num + (num < 0 and -add or add))	#计算加成后的数值
 				goal_player.attrChange(attr_type, num)
 
 				if num < 0:
@@ -913,8 +922,6 @@ class PCRScrimmage:
 			msg.append(f'[CQ:at,qq={player.user_id}]的丢色子阶段(发送 丢色子)')
 			await bot.send(ev, "\n".join(msg))
 		elif stage == NOW_STAGE_SKILL:
-			self.getPlayerObj(player.user_id).buffTriggerByTriggerType(BuffTriggerType.NormalSelf)
-			self.getPlayerObj(player.user_id).buffTriggerByTriggerType(BuffTriggerType.TurnSelf)
 			msg.append(f'[CQ:at,qq={player.user_id}]的放技能阶段：\n(发送技能编号，如需选择目标则@目标)')
 			skill_list = player.active_skills
 			skill_num = 0
@@ -1148,24 +1155,22 @@ async def game_create(bot, ev: CQEvent):
 		
 		for i in range(60):				#从等待到正式开始的循环等待
 			await asyncio.sleep(WAIT_TIME)
-			if scrimmage.now_statu == NOW_STATU_OPEN:
+			if scrimmage.now_statu == NOW_STATU_OPEN :
 				scrimmage.gameOpen()
 				img = scrimmage.getNowImage()
 				img.save(image.path)
-				await bot.send(ev,image.cqcode)
+				await bot.send(ev, image.cqcode)
 				await asyncio.sleep(PROCESS_WAIT_TIME)
 				await scrimmage.stageRemind(bot, ev)
 				break
-			elif scrimmage.now_statu == NOW_STATU_END:
-				break
+			elif scrimmage.now_statu == NOW_STATU_END : break
 
-		if scrimmage.now_statu == NOW_STATU_OPEN:
-			while True:  # 开始后的循环等待
+		if scrimmage.now_statu == NOW_STATU_OPEN :
+			while True:								#开始后的循环等待
 				await asyncio.sleep(WAIT_TIME)
 				await scrimmage.PlayerStageTimer(gid, bot, ev)		#玩家阶段计时器
-				if (scrimmage.now_statu == NOW_STATU_END or
-						scrimmage.now_statu == NOW_STATU_WIN):
-					break
+				if (scrimmage.now_statu == NOW_STATU_END or 
+					scrimmage.now_statu == NOW_STATU_WIN): break
 		if scrimmage.now_statu == NOW_STATU_WIN:
 			msg = ['大乱斗已结束，排名如下：']
 			for i in range(len(scrimmage.rank)):
@@ -1312,6 +1317,9 @@ async def use_skill(bot, ev: CQEvent):
 	ret = await scrimmage.useSkill(skill_id, uid, goal_player_id, bot, ev)
 	if ret == RET_ERROR:
 		return
+
+	scrimmage.turnChange()				#回合切换
+	scrimmage.refreshNowImageStatu()	#刷新当前显示状态
 
 	image = R.img(f'{IMAGE_PATH}/{gid}.png')
 	img = scrimmage.getNowImage()

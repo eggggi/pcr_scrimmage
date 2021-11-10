@@ -48,8 +48,11 @@ class BuffType(IntEnum):
 	Shield					= 30201
 
 	NormalSelfAttrAtkDown	= 40101
+	NormalSelfAttrAtkUp		= 40102
+	NormalSelfAttrCritUp	= 40103
 
 	TurnSelfAttrCritUp		= 50101
+	TurnSelfAttrAtkUp		= 50102
 
 	AttackAttrCritUp		= 60101
 	AttackAttrCritHurtUp	= 60102
@@ -180,11 +183,27 @@ Buff = {
 
 	BuffType.NormalSelfAttrAtkDown:{
 		'name':'虚弱',
-		'text':'每回合降低{0}攻击力，持续{1}个自我回合',
+		'text':'降低{0}攻击力，持续{1}个自我回合',
 		'trigger_type':BuffTriggerType.NormalSelf,
 		'effect_type':BuffEffectType.Attr,
 
 		'attr_type':Attr.ATTACK,
+	},
+	BuffType.NormalSelfAttrAtkUp:{
+		'name':'强化',
+		'text':'增加{0}攻击力，持续{1}个自我回合',
+		'trigger_type':BuffTriggerType.NormalSelf,
+		'effect_type':BuffEffectType.Attr,
+
+		'attr_type':Attr.ATTACK,
+	},
+	BuffType.NormalSelfAttrCritUp:{
+		'name':'精准',
+		'text':'增加{0}%暴击率，持续{1}个自我回合',
+		'trigger_type':BuffTriggerType.NormalSelf,
+		'effect_type':BuffEffectType.Attr,
+
+		'attr_type':Attr.CRIT,
 	},
 
 	BuffType.TurnSelfAttrCritUp:{#暴击弓专属buff
@@ -194,6 +213,14 @@ Buff = {
 		'effect_type':BuffEffectType.Attr,
 
 		'attr_type':Attr.CRIT,
+	},
+	BuffType.TurnSelfAttrAtkUp:{
+		'name':'越战越勇',
+		'text':'每自我回合增加{0}点攻击力，持续{1}个自我回合',
+		'trigger_type':BuffTriggerType.TurnSelf,
+		'effect_type':BuffEffectType.Attr,
+
+		'attr_type':Attr.ATTACK,
 	},
 
 	BuffType.AttackAttrCritUp:{

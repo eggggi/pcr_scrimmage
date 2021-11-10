@@ -96,6 +96,89 @@ from .buff import BuffType, BuffTriggerType
 # 角色字典
 ROLE = {
 	#注意：id要和_pcr_data.py里对应角色一样
+	1701:{
+		"name":"环奈",
+
+		"health":1000,
+		"distance":9,
+		"attack":110,
+		"defensive":80,
+		"crit":10,
+		"tp":0,
+
+		"active_skills" : [
+			{
+				"name":"普通攻击",
+				"text":"对目标造成0(+1.0自身攻击力)伤害",
+				"tp_cost":0,
+				"trigger": TRIGGER_SELECT_EXCEPT_ME,
+				"passive":[],
+
+				"effect":{
+					EFFECT_HURT:(0, Attr.ATTACK, 0, 1, False)
+				}
+			},
+			{
+				"name":"冲击之刃",
+				"text":"对目标造成及其半径3范围内所有玩家造成90(+1.2自身攻击力)伤害，并降低20护甲",
+				"tp_cost":20,
+				"trigger": TRIGGER_SELECT_EXCEPT_ME,
+				"passive":[],
+
+				"effect":{
+					EFFECT_HURT:(90, Attr.ATTACK, 0, 1.2, False),
+					EFFECT_ATTR_CHANGE:[(Attr.DEFENSIVE, -20, 0, 0)],
+					EFFECT_AOE:(3, False)
+				}
+			},
+			{
+				"name":"天赐之物",
+				"text":"所有玩家增加50点攻击力和10%暴击率，自身持续永久，其他玩家持续1个自我回合",
+				"tp_cost":30,
+				"trigger": TRIGGER_ALL_EXCEPT_ME,
+				"passive":[0],
+
+				"effect":{
+					EFFECT_BUFF:[
+						(BuffType.NormalSelfAttrAtkUp, 50, 1),
+						(BuffType.NormalSelfAttrCritUp, 10, 1),
+					],
+				}
+			},
+			{
+				"name":"闪耀之刃",
+				"text":"对目标造成及其半径4范围内所有玩家造成120(+1.2自身攻击力)伤害，自身永久增加10%暴击率和爆伤",
+				"tp_cost":50,
+				"trigger": TRIGGER_SELECT_EXCEPT_ME,
+				"passive":[1],
+
+				"effect":{
+					EFFECT_HURT:(120, Attr.ATTACK, 0, 1.2, False),
+					EFFECT_AOE:(4, False),
+				}
+			},
+		],
+		"passive_skills": [
+			{
+				"trigger": TRIGGER_ME,
+				"effect":{
+					EFFECT_ATTR_CHANGE:[
+						(Attr.CRIT, 10, 0, 0),
+						(Attr.ATTACK, 50, 0, 0)
+					],
+				}
+			},
+			{
+				"trigger": TRIGGER_ME,
+				"effect":{
+					EFFECT_ATTR_CHANGE:[
+						(Attr.CRIT, 10, 0, 0),
+						(Attr.CRIT_HURT, 0.1, 0, 0)
+					],
+				}
+			},
+		]
+	},
 	1068:{
 		"name":"晶",
 
@@ -236,7 +319,7 @@ ROLE = {
 			{
 				"name":"吓到你发抖！/ 天楼回刃斩",
 				"text":("吓到你发抖！:对目标造成50(+0.8自身攻击力)伤害，并降低30点攻击力持续3玩家回合，且将其击退5步 \n" + 
-						"\t天楼回刃斩：对目标造成125(+1.25自身攻击力)伤害，并将造成伤害的12%转化为生命值"),
+						"\t天楼回刃斩：对目标造成120(+1.5自身攻击力)伤害，并将造成伤害的12%转化为生命值"),
 				"tp_cost":20,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[],
@@ -250,7 +333,7 @@ ROLE = {
 			{
 				"name":"这边啦这边！/ 天楼闪薙斩",
 				"text":("这边啦这边！:降低目标及其半径范围2以内所有玩家45点防御力，持续8个玩家回合，并减少30TP \n" + 
-						"\t天楼闪薙斩：对目标及其半径范围3以内所有玩家造成100(+0.6自身攻击力)伤害，并将造成伤害的5%转化为生命值"),
+						"\t天楼闪薙斩：对目标及其半径范围3以内所有玩家造成100(+1.1自身攻击力)伤害，并将造成伤害的5%转化为生命值"),
 				"tp_cost":20,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[],
@@ -263,12 +346,12 @@ ROLE = {
 			},
 			{
 				"name":"天楼霸断剑",
-				"text":"对目标造成50(+0.8自身攻击力)伤害，并巨幅增加自身所有属性，持续全场！",
+				"text":"对目标造成50(+1.0自身攻击力)伤害，并巨幅增加自身所有属性，持续全场！",
 				"tp_cost":100,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[2],
 				"effect":{
-					EFFECT_HURT:(50, Attr.ATTACK, 0, 0.8, False),
+					EFFECT_HURT:(50, Attr.ATTACK, 0, 1, False),
 				}
 			}
 		],
@@ -276,14 +359,14 @@ ROLE = {
 			{
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"effect":{
-					EFFECT_HURT:(125, Attr.ATTACK, 0, 1.25, False),
+					EFFECT_HURT:(120, Attr.ATTACK, 0, 1.5, False),
 					EFFECT_LIFESTEAL:0.12,
 				}
 			},
 			{
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"effect":{
-					EFFECT_HURT:(100, Attr.ATTACK, 0, 0.6, False),
+					EFFECT_HURT:(100, Attr.ATTACK, 0, 1.1, False),
 					EFFECT_AOE:(3, False),
 					EFFECT_LIFESTEAL:0.05,
 				}
@@ -345,12 +428,12 @@ ROLE = {
 			},
 			{
 				"name":"能量吸附",
-				"text":"对目标造成50(+1.5自身攻击力)伤害，并将造成伤害的30%转换为自身生命值，并回复自身20点TP",
+				"text":"对目标造成50(+1.5自身攻击力)伤害，并将造成伤害的30%转换为自身生命值，并回复自身40点TP",
 				"tp_cost":30,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[1],
 				"effect":{
-					EFFECT_HURT:(50, Attr.ATTACK, 0, 1.5, False),
+					EFFECT_HURT:(40, Attr.ATTACK, 0, 1.5, False),
 					EFFECT_LIFESTEAL:0.3,
 				}
 			},
@@ -718,7 +801,7 @@ ROLE = {
 			},
 			{
 				"name":"剧毒箭",
-				"text":"无视距离，对目标造成80(+0.5自身攻击力)的伤害，并降低目标3点攻击距离。附加每回合减少40生命值的中毒效果，持续3个玩家回合",
+				"text":"无视距离，对目标造成80(+0.5自身攻击力)的伤害。附加每回合减少40生命值的中毒效果，持续3个玩家回合",
 				"tp_cost":30,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[0],
@@ -726,13 +809,12 @@ ROLE = {
 				"effect":{
 					EFFECT_HURT:(80, Attr.ATTACK, 0, 0.5, False),
 					EFFECT_BUFF:[(BuffType.TurnAttrHelDown, -40, 3)],
-					EFFECT_ATTR_CHANGE:[(Attr.DISTANCE, -3, 0, 0)],
 				},
 			},
 			{
 				"name":"剧毒绽放",
-				"text":"无视距离，对目标及其半径4范围内的玩家造成160(+1.0自身攻击力)的伤害，并降低目标4点攻击距离。附加每回合减少80生命值的中毒效果，持续3个玩家回合",
-				"tp_cost":70,
+				"text":"无视距离，对目标及其半径4范围内的玩家造成160(+1.0自身攻击力)的伤害，并降低目标3点攻击距离。附加每回合减少80生命值的中毒效果，持续3个玩家回合",
+				"tp_cost":60,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[0],
 				
@@ -740,7 +822,7 @@ ROLE = {
 					EFFECT_AOE:(4, False),
 					EFFECT_HURT:(160, Attr.ATTACK, 0, 1.0, False),
 					EFFECT_BUFF:[(BuffType.TurnAttrHelDown, -80, 3)],
-					EFFECT_ATTR_CHANGE:[(Attr.DISTANCE, -4, 0, 0)],
+					EFFECT_ATTR_CHANGE:[(Attr.DISTANCE, -3, 0, 0)],
 				},
 			},
 		],
@@ -1013,7 +1095,7 @@ ROLE = {
 			{
 				"name":"Live On Stage!",
 				"text":"为自己增加一个1000生命值的护盾（只可触发1次），赋予全体玩家50点攻击力，且下次攻击必爆并增加50%爆伤",
-				"tp_cost":70,
+				"tp_cost":60,
 				"trigger": TRIGGER_ME,
 				"passive":[1],
 
@@ -1088,14 +1170,14 @@ ROLE = {
 			},
 			{
 				"name":"凤凰之终结",
-				"text":"对目标及其半径4范围内的玩家造成150(+1.2自身攻击力)的伤害,自身每损失1%生命值额外造成8点伤害",
+				"text":"对目标及其半径4范围内的玩家造成100(+1.2自身攻击力)的伤害,自身每损失1%生命值额外造成8点伤害",
 				"tp_cost":70,
 				"trigger":TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[],
 				
 				"effect":{
 					EFFECT_AOE:(4, False),
-					EFFECT_HURT:(150, Attr.ATTACK, 0, 1.2, False),
+					EFFECT_HURT:(100, Attr.ATTACK, 0, 1.2, False),
 					EFFECT_STAND:(1, 8),
 				}
 			},
@@ -1197,7 +1279,7 @@ ROLE = {
 			},
 			{
 				"name":"蹦蹦跳跳",
-				"text":"自身增加40点攻击力和20点防御力",
+				"text":"自身增加40点攻击力和40点防御力",
 				"tp_cost":20,
 				"trigger": TRIGGER_ME,
 				"passive":[],
@@ -1205,30 +1287,30 @@ ROLE = {
 				"effect":{
 					EFFECT_ATTR_CHANGE:[
 						(Attr.ATTACK, 40, 0, 0),
-						(Attr.DEFENSIVE, 20, 0, 0)],
+						(Attr.DEFENSIVE, 40, 0, 0)],
 				}
 			},
 			{
 				"name":"崩山击",
-				"text":"向目标移动3格，并对目标及其半径4范围内的所有玩家造成100(+1.0自身攻击力)伤害",
+				"text":"向目标移动3格，并对目标及其半径4范围内的所有玩家造成100(+1.2自身攻击力)伤害",
 				"tp_cost":30,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[0],
 
 				"effect":{
-					EFFECT_HURT:(100, Attr.ATTACK, 0, 1.0, False),
+					EFFECT_HURT:(100, Attr.ATTACK, 0, 1.2, False),
 					EFFECT_AOE:(4, False)
 				}
 			},
 			{
 				"name":"兰德索尔正义",
-				"text":"对目标造成120点真实伤害，目标当前生命值每降低1%则额外造成7点真实伤害",#斩杀效果
+				"text":"对目标造成120(+0.5自身攻击力)点真实伤害，目标当前生命值每降低1%则额外造成7点真实伤害",#斩杀效果
 				"tp_cost":65,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[],
 
 				"effect":{
-					EFFECT_HURT:(120, Attr.ATTACK, 0, 0, True),
+					EFFECT_HURT:(120, Attr.ATTACK, 0, 0.5, True),
 					EFFECT_ELIMINATE:(1, 7)
 				}
 			},
@@ -1248,7 +1330,7 @@ ROLE = {
 		"distance":5,
 		"attack":120,
 		"defensive":60,
-		"crit":20,
+		"crit":15,
 		"tp":0,
 
 		"active_skills":[
@@ -1265,31 +1347,31 @@ ROLE = {
 			},
 			{
 				"name":"正中突破",
-				"text":"对目标造成80(+1.2自身攻击力)的伤害，并降低其20点防御力",
+				"text":"对目标造成80(+1.0自身攻击力)的伤害，并降低其20点防御力",
 				"tp_cost":20,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[],
 				
 				"effect":{
-					EFFECT_HURT:(80, Attr.ATTACK, 0, 1.2, False),
+					EFFECT_HURT:(80, Attr.ATTACK, 0, 1.0, False),
 					EFFECT_ATTR_CHANGE:[(Attr.DEFENSIVE, -20, 0, 0)],
 				},
 			},
 			{
 				"name":"精神统一",
-				"text":"每回合提升自身30点攻击,持续5回合",
-				"tp_cost":30,
+				"text":"每自我回合永久提升自身35点攻击,持续3回合",
+				"tp_cost":35,
 				"trigger": TRIGGER_ME,
 				"passive":[],
 				
 				"effect":{
-					EFFECT_BUFF:[(BuffType.TurnAttrAtkUp, 30, 5)],
+					EFFECT_BUFF:[(BuffType.TurnSelfAttrAtkUp, 35, 3)],
 				}
 			},
 			{
 				"name":"琉球犬重拳出击",
 				"text":"对目标造成250(+2.0自身攻击力)真实伤害，并将所造成伤害的30%转为生命值。使用后会降低自身250攻击力持续3个玩家回合",
-				"tp_cost":60,
+				"tp_cost":70,
 				"trigger":TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[0],
 				
@@ -1314,7 +1396,7 @@ ROLE = {
 		"distance":12,
 		"attack":100,
 		"defensive":50,
-		"crit":0,
+		"crit":10,
 		"tp":0,
 
 		"active_skills" : [
@@ -1430,7 +1512,7 @@ ROLE = {
 		"health":1200,
 		"distance":10,
 		"attack":100,
-		"defensive":240,
+		"defensive":250,
 		"crit":10,
 		"tp":0,
 
@@ -1514,14 +1596,14 @@ ROLE = {
 			},
 			{
 				"name":"破甲突刺",
-				"text":"无视距离，对离自己最近的目标造成100(+10%目标最大生命值)伤害，并降低目标10%防御力",
+				"text":"无视距离，对离自己最近的目标造成50(+20%目标最大生命值)伤害，并降低目标20%防御力",
 				"tp_cost":20,
 				"trigger": TRIGGER_NEAR,
 				"passive":[],
 
 				"effect":{
-					EFFECT_HURT:(100, Attr.MAX_HEALTH, 1, 0.10, False),
-					EFFECT_ATTR_CHANGE:[(Attr.DEFENSIVE, -1, Attr.DEFENSIVE, 0.1)],
+					EFFECT_HURT:(50, Attr.MAX_HEALTH, 1, 0.20, False),
+					EFFECT_ATTR_CHANGE:[(Attr.DEFENSIVE, -1, Attr.DEFENSIVE, 0.2)],
 				}
 			},
 			{
@@ -1539,7 +1621,7 @@ ROLE = {
 			},
 			{
 				"name":"极光风暴",
-				"text":"对自己以外的所有人造成135(+1.0自身攻击力)真实伤害，并展开攻击力上升、暴击率上升的领域3回合。",
+				"text":"对自己以外的所有人造成135(+1.0自身攻击力)真实伤害，并展开攻击力上升、暴击率上升的领域4回合。",
 				"tp_cost":60,
 				"trigger": TRIGGER_ALL_EXCEPT_ME,
 				"passive":[0],
@@ -1554,8 +1636,8 @@ ROLE = {
 				"trigger": TRIGGER_ME,
 				"effect":{
 					EFFECT_BUFF:[
-						(BuffType.NormalAttrAtkUp, 100, 3),
-						(BuffType.NormalAttrCritUp, 20, 3),
+						(BuffType.NormalAttrAtkUp, 100, 4),
+						(BuffType.NormalAttrCritUp, 20, 4),
 					],
 				}
 			},
@@ -1646,14 +1728,14 @@ ROLE = {
 			},
 			{
 				"name":"勇气冲拳",
-				"text":"无视距离，对离自己最近的目标造成0(+0.75自身攻击力伤害)，并将所造成伤害的50%转换为生命值，且增加自身50点攻击力和1点攻击距离",
+				"text":"无视距离，对离自己最近的目标造成0(+0.75自身攻击力伤害)，并将所造成伤害的30%转换为生命值，且增加自身50点攻击力和1点攻击距离",
 				"tp_cost":20,
 				"trigger": TRIGGER_NEAR,
 				"passive":[0],
 
 				"effect":{
 					EFFECT_HURT:(0, Attr.ATTACK, 0, 0.75, False),
-					EFFECT_LIFESTEAL:0.5,
+					EFFECT_LIFESTEAL:0.3,
 				}
 			},
 			{
