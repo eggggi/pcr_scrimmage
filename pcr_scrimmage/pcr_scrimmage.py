@@ -32,7 +32,7 @@ from .attr import Attr, AttrTextChange
 from .buff import BuffEffectType, BuffTriggerType, Buff
 from .runway_case import (CASE_NONE, CASE_ATTACK, CASE_DEFENSIVE, CASE_HEALTH, 
 						  CASE_MOVE, CASE_TP, RUNWAY_CASE)
-from .role import (EFFECT_BUFF, EFFECT_BUFF_BY_BT, EFFECT_DIZZINESS, EFFECT_HIT_BACK, EFFECT_SKILL_CHANGE,
+from .role import (EFFECT_BUFF, EFFECT_BUFF_BY_BT, EFFECT_DIZZINESS, EFFECT_HIT_BACK, EFFECT_JUMP, EFFECT_SKILL_CHANGE,
 				   EFFECT_STAND, ROLE, EFFECT_LOCKTURN,
 				   EFFECT_HURT, EFFECT_ATTR_CHANGE, EFFECT_MOVE, EFFECT_MOVE_GOAL, EFFECT_LIFESTEAL,
 				   EFFECT_OUT_TP, EFFECT_OUT_LOCKTURN, EFFECT_IGNORE_DIST, EFFECT_AOE, EFFECT_ELIMINATE,
@@ -142,11 +142,14 @@ class Role:
 			Attr.xx = 数值,
 		}
 		'''
+
 		self.buff = {}			#角色buff列表
 		'''
+		NomalBuffFlag: 用来标记是否是普通buff，该类buff在结束后会返还扣除的属性值或扣除增加的属性值
+		NomalBuffChangeNum: 用来记录普通buff改变的数值，用来处理有上限的属性
 		{
-			BuffType1 = [数值, 次数, flag],
-			BuffType2 = [数值, 次数, flag],
+			BuffType1 = [数值, 次数, NomalBuffFlag, NomalBuffChangeNum],
+			BuffType2 = [数值, 次数, NomalBuffFlag, NomalBuffChangeNum],
 		}
 		'''
 
@@ -220,11 +223,15 @@ class Role:
 			if attr_type == Attr.NOW_HEALTH:
 				#如果是生命值降为0，则调用出局接口
 				self.room_obj.outDispose(self)
-	#位置改变
-	def locationChange(self, num, runway):
+		return self.attr[attr_type]
+	#位置改变	flag:如果为真，则直接设置固定位置；如果为假，根据原位置改变
+	def locationChange(self, num, runway, flag = False):
 		if self.now_stage == NOW_STAGE_OUT: return
 		runway[self.now_location]["players"].remove(self.user_id)
-		self.now_location += num
+		if flag:
+			self.now_location = num
+		else:
+			self.now_location += num
 		while(self.now_location >= len(runway) or self.now_location < 0):
 			if self.now_location >= len(runway):
 				self.now_location -= len(runway)
@@ -248,7 +255,7 @@ class Role:
 
 	#添加buff
 	def addBuff(self, buff_info):
-		self.buff[buff_info[0]] = [buff_info[1], buff_info[2], 0]
+		self.buff[buff_info[0]] = [buff_info[1], buff_info[2], 0, 0]
 	#删除buff（不要在迭代self.buff时调用）
 	def deleteBuff(self, buff_type):
 		if buff_type in self.buff:
@@ -256,7 +263,7 @@ class Role:
 			if (trigger_type == BuffTriggerType.Normal or 
 				trigger_type == BuffTriggerType.NormalSelf or 
 				trigger_type == BuffTriggerType.Attack) and 'attr_type' in Buff[buff_type]:
-				self.attrChange(Buff[buff_type]['attr_type'], -self.buff[buff_type][0])
+				self.attrChange(Buff[buff_type]['attr_type'], -self.buff[buff_type][3])
 			del self.buff[buff_type]
 	#删除失效buff
 	def deleteInvalidBuff(self):
@@ -294,8 +301,10 @@ class Role:
 				trigger_type == BuffTriggerType.NormalSelf or 
 				trigger_type == BuffTriggerType.Attack):
 				if info[2] == 0:
-					self.attrChange(attr_type, info[0])
+					old_num = self.attr[attr_type]
+					new_num = self.attrChange(attr_type, info[0])
 					info[2] = 1
+					info[3] = new_num - old_num
 			else:
 				self.attrChange(attr_type, info[0])
 		elif effect_type == BuffEffectType.Shield:
@@ -501,7 +510,8 @@ class PCRScrimmage:
 	def outDispose(self, player:Role):
 		player.stageChange(NOW_STAGE_OUT)
 		self.rank[len(self.now_playing_players)] = player.user_id
-		self.now_playing_players.remove(player.user_id)
+		if player.user_id in self.now_playing_players:
+			self.now_playing_players.remove(player.user_id)
 		player.buff.clear()
 		if len(self.now_playing_players) == 1:
 			self.rank[1] = self.now_playing_players[0]
@@ -761,6 +771,11 @@ class PCRScrimmage:
 				else:
 					use_skill_player.locationChange(-num, self.runway)
 			back_msg.append(f'{use_player_name}往离{goal_player_name}较近的方向移动了{num}步')
+
+		#选择目标的移动效果
+		if EFFECT_JUMP in skill_effect:
+			use_skill_player.locationChange(goal_player.now_location + random.choice([-1, 1]), self.runway, True)
+			back_msg.append(f'{use_player_name}移动到了{goal_player_name}的身边')
 
 		#击退/拉近
 		if EFFECT_HIT_BACK in skill_effect:
@@ -1134,7 +1149,7 @@ PROCESS_WAIT_TIME = 1	#避免发送太快增加的缓冲时间
 STAGE_WAIT_TIME = 30	#玩家阶段等待时间，超过这个时间判负。
 						#实际时间是 STAGE_WAIT_TIME * WAIT_TIME
 
-@sv.on_fullmatch('创建大乱斗')
+@sv.on_fullmatch(('创建大乱斗'))
 async def game_create(bot, ev: CQEvent):
 	gid, uid = ev.group_id, ev.user_id
 
@@ -1180,7 +1195,7 @@ async def game_create(bot, ev: CQEvent):
 		else:
 			await bot.send(ev, f'游戏结束')
 
-@sv.on_fullmatch('加入大乱斗')
+@sv.on_fullmatch(('加入大乱斗'))
 async def game_join(bot, ev: CQEvent):
 	gid, uid = ev.group_id, ev.user_id
 	scrimmage = mgr.get_game(gid)
@@ -1201,7 +1216,7 @@ async def game_join(bot, ev: CQEvent):
 	if scrimmage.getPlayerNum() == MAX_PLAYER:
 		await bot.send(ev, f'人数已满，可开始游戏。\n（[CQ:at,qq={scrimmage.room_master}]发送“开始大乱斗”开始）')
 
-@sv.on_fullmatch('开始大乱斗')
+@sv.on_fullmatch(('开始大乱斗'))
 async def game_start(bot, ev: CQEvent):
 	gid, uid = ev.group_id, ev.user_id
 	scrimmage = mgr.get_game(gid)
@@ -1248,7 +1263,7 @@ async def select_role(bot, ev: CQEvent):
 			await asyncio.sleep(PROCESS_WAIT_TIME)
 			scrimmage.now_statu = NOW_STATU_OPEN
 
-@sv.on_fullmatch('扔色子','扔骰子','丢色子','丢骰子','丢','扔')
+@sv.on_fullmatch(('扔色子','扔骰子','丢色子','丢骰子','丢','扔'))
 async def throw_dice(bot, ev: CQEvent):
 	gid, uid = ev.group_id, ev.user_id
 
@@ -1328,7 +1343,7 @@ async def use_skill(bot, ev: CQEvent):
 	await asyncio.sleep(PROCESS_WAIT_TIME)
 	await scrimmage.stageRemind(bot, ev)
 
-@sv.on_fullmatch('认输','投降','不玩了')
+@sv.on_fullmatch(('认输','投降','不玩了'))
 async def throw_dice(bot, ev: CQEvent):
 	gid, uid = ev.group_id, ev.user_id
 
@@ -1357,7 +1372,7 @@ async def throw_dice(bot, ev: CQEvent):
 	
 
 	
-@sv.on_fullmatch('查看属性')
+@sv.on_fullmatch(('查看属性'))
 async def check_property(bot, ev: CQEvent):
 	gid, uid = ev.group_id, ev.user_id
 
@@ -1397,7 +1412,7 @@ async def check_role(bot, ev: CQEvent):
 
 	await bot.send(ev, '不存在的角色')
 
-@sv.on_fullmatch('结束大乱斗')
+@sv.on_fullmatch(('结束大乱斗'))
 async def game_end(bot, ev: CQEvent):
 	gid, uid = ev.group_id, ev.user_id
 
@@ -1410,7 +1425,7 @@ async def game_end(bot, ev: CQEvent):
 	scrimmage.now_statu = NOW_STATU_END
 	await bot.send(ev, f"您已强制结束大乱斗，请等待结算")
 
-@sv.on_fullmatch('PCR大乱斗','pcr大乱斗','大乱斗帮助','PCR大乱斗帮助','pcr大乱斗帮助')
+@sv.on_fullmatch(('PCR大乱斗','pcr大乱斗','大乱斗帮助','PCR大乱斗帮助','pcr大乱斗帮助'))
 async def game_help(bot, ev: CQEvent):
 	msg = '''《PCR大乱斗帮助》
 	基础命令：
@@ -1443,7 +1458,7 @@ async def game_help(bot, ev: CQEvent):
 '''
 	await bot.send(ev, msg)
 
-@sv.on_fullmatch('大乱斗规则')
+@sv.on_fullmatch(('大乱斗规则'))
 async def game_help_all_role(bot, ev: CQEvent):
 	msg = '''《PCR大乱斗规则》
 1、和大富翁类似，一个正方形环形跑道，跑道上有多个事件，通过丢色子走到特定的位置触发事件
@@ -1460,7 +1475,7 @@ async def game_help_all_role(bot, ev: CQEvent):
 '''
 	await bot.send(ev, msg)
 
-@sv.on_fullmatch('大乱斗角色')
+@sv.on_fullmatch(('大乱斗角色'))
 async def game_help_rule(bot, ev: CQEvent):
 	msg = '当前可选角色有：\n'
 	for role in ROLE.values():
