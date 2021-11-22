@@ -1,15 +1,18 @@
 #属性枚举
 from enum import IntEnum
 class Attr(IntEnum):
-	ATTACK 			= 1	#攻击力
-	DEFENSIVE 		= 2	#防御力
-	MAX_HEALTH		= 3	#最大生命值
-	NOW_HEALTH		= 4	#当前生命值
-	DISTANCE		= 5	#攻击距离
-	NOW_TP			= 6	#当前tp
-	MAX_TP			= 7 #最大tp
-	CRIT			= 8	#暴击
-	CRIT_HURT		= 9	#暴击伤害
+	ATTACK 			= 1		#攻击力
+	DEFENSIVE 		= 2		#防御力
+	MAX_HEALTH		= 3		#最大生命值
+	NOW_HEALTH		= 4		#当前生命值
+	DISTANCE		= 5		#攻击距离
+	NOW_TP			= 6		#当前tp
+	MAX_TP			= 7		#最大tp
+	CRIT			= 8		#暴击
+	CRIT_HURT		= 9		#暴击伤害
+
+
+	COST_HEALTH		= 1000	#已损失生命值（特殊属性，不能直接变动数值）
 
 def AttrTextChange(attr_type):
 	if attr_type == Attr.ATTACK:

@@ -93,7 +93,7 @@ TRIGGER_ME = "me"								#只对自己有效
 TRIGGER_NEAR = "near"							#离自己最近的目标
 
 from .attr import Attr
-from .buff import BuffType, BuffTriggerType
+from .buff import BuffType
 
 # 角色字典
 ROLE = {
@@ -149,13 +149,14 @@ ROLE = {
 			},
 			{
 				"name":"闪耀之刃",
-				"text":"对目标造成及其半径4范围内所有玩家造成120(+1.2自身攻击力)伤害，自身永久增加10%暴击率和0.1倍爆伤",
-				"tp_cost":50,
+				"text":"对目标造成及其半径4范围内所有玩家造成120(+1.2自身攻击力)伤害，并将所造成伤害的20%转为生命值。自身增加10%暴击率和0.1倍爆伤",
+				"tp_cost":40,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[1],
 
 				"effect":{
 					EFFECT_HURT:(120, Attr.ATTACK, 0, 1.2, False),
+					EFFECT_LIFESTEAL:0.2,
 					EFFECT_AOE:(4, False),
 				}
 			},
@@ -555,13 +556,13 @@ ROLE = {
 			},
 			{
 				"name":"跳砍",
-				"text":"对目标造成50(+0.5自身防御力)伤害",
+				"text":"对目标造成50(+1.5自身防御力)伤害",
 				"tp_cost":20,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[],
 
 				"effect":{
-					EFFECT_HURT:(50, Attr.DEFENSIVE, 0, 0.5, False)
+					EFFECT_HURT:(50, Attr.DEFENSIVE, 0, 1.5, False)
 				}
 			},
 			{
@@ -579,13 +580,13 @@ ROLE = {
 			},
 			{
 				"name":"公主突袭",
-				"text":"向目标移动5格，对目标造成355真实伤害，并增加自身45点防御力",
-				"tp_cost":45,
+				"text":"向目标移动5格，对目标造成350真实伤害，并增加自身45点防御力",
+				"tp_cost":50,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[0,1],
 
 				"effect":{
-					EFFECT_HURT:(355, Attr.ATTACK, 0, 0, True),
+					EFFECT_HURT:(350, Attr.ATTACK, 0, 0, True),
 				}
 			}
 		],
@@ -651,12 +652,13 @@ ROLE = {
 			},
 			{
 				"name":"星河一天",
-				"text":"对离自己最近的目标造成150(+1.5攻击力)伤害，并回复30点TP和提升0.2倍暴击伤害",
-				"tp_cost":90,
+				"text":"对离自己最近的目标造成150(+1.5攻击力)伤害，并回复30点TP和提升0.2倍暴击伤害。所造成伤害的20%将转为生命值。",
+				"tp_cost":80,
 				"trigger":TRIGGER_NEAR,
 				"passive":[0],
 				"effect":{
 					EFFECT_HURT:(150, Attr.ATTACK, 0, 1.5, False),
+					EFFECT_LIFESTEAL:0.3,
 				}
 			},
 		],
@@ -918,7 +920,7 @@ ROLE = {
 	},
 	1040:{
 		"name":"碧",
-		"health":750,
+		"health":1000,
 		"distance":15,
 		"attack":100,
 		"defensive":50,
@@ -938,39 +940,39 @@ ROLE = {
 				}
 			},
 			{
+				"name":"光合作用",
+				"text":"自身每回合回复125生命值，持续3个玩家回合",
+				"tp_cost":30,
+				"trigger": TRIGGER_ME,
+				"passive":[0],
+				
+				"effect":{
+					EFFECT_BUFF:[(BuffType.TurnAttrHelUp, 125, 3)],
+				},
+			},
+			{
 				"name":"酸性藤曼",
-				"text":"使目标每回合降低10防御力,持续4回合",
-				"tp_cost":20,
+				"text":"使目标每回合降低10防御力,持续4回合。并附加每回合减少60生命值的中毒效果，持续3个玩家回合",
+				"tp_cost":30,
 				"trigger":TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[],
 				
 				"effect":{
 					EFFECT_BUFF:[(BuffType.TurnAttrDefDown, -10, 4)],
+					EFFECT_BUFF:[(BuffType.TurnAttrHelDown, -60, 3)],
 				}
 			},
 			{
-				"name":"剧毒箭",
-				"text":"无视距离，对目标造成80(+0.5自身攻击力)的伤害。附加每回合减少50生命值的中毒效果，持续3个玩家回合",
-				"tp_cost":30,
-				"trigger": TRIGGER_SELECT_EXCEPT_ME,
-				"passive":[0],
-				
-				"effect":{
-					EFFECT_HURT:(80, Attr.ATTACK, 0, 0.5, False),
-					EFFECT_BUFF:[(BuffType.TurnAttrHelDown, -50, 3)],
-				},
-			},
-			{
 				"name":"剧毒绽放",
-				"text":"无视距离，对目标及其半径4范围内的玩家造成160(+1.0自身攻击力)的伤害，并降低目标3点攻击距离。附加每回合减少80生命值的中毒效果，持续3个玩家回合",
+				"text":"无视距离，对目标及其半径4范围内的玩家造成130(+1.0自身攻击力)的伤害，并降低目标3点攻击距离。附加每回合减少100生命值的中毒效果，持续3个玩家回合",
 				"tp_cost":60,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[0],
 				
 				"effect":{
 					EFFECT_AOE:(4, False),
-					EFFECT_HURT:(160, Attr.ATTACK, 0, 1.0, False),
-					EFFECT_BUFF:[(BuffType.TurnAttrHelDown, -80, 3)],
+					EFFECT_HURT:(130, Attr.ATTACK, 0, 1.0, False),
+					EFFECT_BUFF:[(BuffType.TurnAttrHelDown, -100, 3)],
 					EFFECT_ATTR_CHANGE:[(Attr.DISTANCE, -3, 0, 0)],
 				},
 			},
@@ -1013,7 +1015,7 @@ ROLE = {
 				"passive":[2],
 
 				"effect":{
-					EFFECT_HURT:(-80, Attr.ATTACK, 0, 1.45, False)
+					EFFECT_HURT:(80, Attr.ATTACK, 0, 1.45, False)
 				}
 			},
 			{
@@ -1029,13 +1031,14 @@ ROLE = {
 			},
 			{
 				"name":"附魔之箭",
-				"text":"对目标造成100(+1.5自身攻击力)伤害,并提升自身100攻击力和回复50tp",
+				"text":"对目标造成100(+1.5自身攻击力)伤害,并提升自身100攻击力和回复50tp，并将所造成伤害的20%转为生命值。",
 				"tp_cost":100,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[0,1],
 
 				"effect":{
-					EFFECT_HURT:(100, Attr.ATTACK, 0, 1.5, False)
+					EFFECT_HURT:(100, Attr.ATTACK, 0, 1.5, False),
+					EFFECT_LIFESTEAL:0.2,
 				}
 			}
 		],
@@ -1106,13 +1109,14 @@ ROLE = {
 			},
 			{
 				"name":"宇宙苍蓝闪",
-				"text":"无视距离，对目标造成50(+2.2自身攻击力)伤害",
+				"text":"无视距离，对目标造成50(+2.2自身攻击力)伤害，并将所造成伤害的20%转为生命值。",
 				"tp_cost":70,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[0],
 
 				"effect":{
 					EFFECT_HURT:(50, Attr.ATTACK, 0, 2.2, False),
+					EFFECT_LIFESTEAL:0.2,
 				}
 			}
 		],
@@ -1131,19 +1135,19 @@ ROLE = {
 		"distance":7,
 		"attack":0,
 		"defensive":100,
-		"crit":0,
+		"crit":5,
 		"tp":20,
 
 		"active_skills":[
 			{
 				"name":"肉蛋葱鸡",
-				"text":"无视距离，向离自己最近的目标移动5步，并对目标造成0(+1.0自身防御力)伤害",
+				"text":"无视距离，向离自己最近的目标移动5步，并对目标造成0(+1.0自身防御力)真实伤害",
 				"tp_cost":10,
 				"trigger": TRIGGER_NEAR,
 				"passive":[0],
 
 				"effect":{
-					EFFECT_HURT:(0, Attr.DEFENSIVE, 0, 1, False)
+					EFFECT_HURT:(0, Attr.DEFENSIVE, 0, 1, True)
 				}
 			},
 			{
@@ -1231,14 +1235,14 @@ ROLE = {
 				"passive":[],
 
 				"effect":{
-					EFFECT_HURT:(0, Attr.ATTACK, 0, 1, False),
+					EFFECT_HURT:(30, Attr.ATTACK, 0, 0.8, False),
 					EFFECT_BUFF:[(BuffType.NormalAttrAtkDown, -30, 2)],
 					EFFECT_DIZZINESS:1
 				}
 			},
 			{
 				"name":"偶像声援",
-				"text":"对自身回复80(+1.0自身防御力)的生命值，对其他玩家回复50(+0.5自身防御力)的生命值",
+				"text":"对自身回复100(+1.0自身防御力)的生命值，对其他玩家回复50(+0.5自身防御力)的生命值",
 				"tp_cost":30,
 				"trigger": TRIGGER_ALL_EXCEPT_ME,
 				"passive":[0],
@@ -1249,13 +1253,14 @@ ROLE = {
 			},
 			{
 				"name":"Live On Stage!",
-				"text":"为自己增加一个1000生命值的护盾（只可触发1次）并提升50点防御力，赋予全体玩家50点攻击力，且下次攻击必爆并增加50%爆伤",
+				"text":"为自己增加一个1000生命值的护盾（只可触发1次）并提升70点防御力，赋予全体玩家50点攻击力，且下次攻击必爆并增加50%爆伤",
 				"tp_cost":60,
 				"trigger": TRIGGER_ME,
 				"passive":[1],
 
 				"effect":{
 					EFFECT_BUFF:[(BuffType.Shield, 1000, 1)],
+					EFFECT_ATTR_CHANGE:[(Attr.DEFENSIVE, 70, 0, 0)],
 				}
 			},
 		],
@@ -1263,7 +1268,7 @@ ROLE = {
 			{
 				"trigger": TRIGGER_ME,
 				"effect":{
-					EFFECT_ATTR_CHANGE:[(Attr.NOW_HEALTH, 80, Attr.DEFENSIVE, 1.2)]
+					EFFECT_ATTR_CHANGE:[(Attr.NOW_HEALTH, 100, Attr.DEFENSIVE, 1.0)]
 				},
 			},
 			{
@@ -1304,10 +1309,13 @@ ROLE = {
 				"text":"自身恢复30TP，并提升50攻击力",
 				"tp_cost":20,
 				"trigger":TRIGGER_ME,
-				"passive":[0],
+				"passive":[],
 				
 				"effect":{
-					EFFECT_ATTR_CHANGE:[(Attr.NOW_TP, 30, 0, 0)],
+					EFFECT_ATTR_CHANGE:[
+						(Attr.NOW_TP, 30, 0, 0),
+						(Attr.ATTACK, 50, 0, 0)
+					],
 				}
 			},
 			{
@@ -1325,26 +1333,20 @@ ROLE = {
 			},
 			{
 				"name":"凤凰之终结",
-				"text":"对目标及其半径4范围内的玩家造成100(+1.2自身攻击力)的伤害,自身每损失1%生命值额外造成8点伤害",
+				"text":"对目标及其半径5范围内的玩家造成100(+1.2自身攻击力)的伤害,自身每损失1%生命值额外造成8点伤害，并将所造成伤害的20%转为生命值。",
 				"tp_cost":70,
 				"trigger":TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[],
 				
 				"effect":{
-					EFFECT_AOE:(4, False),
+					EFFECT_AOE:(5, False),
 					EFFECT_HURT:(100, Attr.ATTACK, 0, 1.2, False),
 					EFFECT_STAND:(1, 8),
+					EFFECT_LIFESTEAL:0.3,
 				}
 			},
 		],
-		"passive_skills":[
-			{
-				"trigger":TRIGGER_ME,
-				"effect":{
-					EFFECT_ATTR_CHANGE:[(Attr.ATTACK, 50, 0, 0)]
-				}
-			}
-		]
+		"passive_skills":[]
 	},
 	1022:{
 		"name":"依里",
@@ -1397,7 +1399,7 @@ ROLE = {
 			},
 			{
 				"name":"闪电之枪",
-				"text":"对目标及其半径4范围内自己以外的玩家造成70(+2.0自身攻击力)真实伤害，并将所造成伤害的10%转换为生命值",
+				"text":"对目标及其半径4范围内自己以外的玩家造成70(+2.0自身攻击力)真实伤害，并将所造成伤害的20%转换为生命值",
 				"tp_cost":50,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[],
@@ -1405,7 +1407,7 @@ ROLE = {
 				"effect":{
 					EFFECT_AOE:(4, False),
 					EFFECT_HURT:(70, Attr.ATTACK, 0, 2.0, True),
-					EFFECT_LIFESTEAL:0.1,
+					EFFECT_LIFESTEAL:0.2,
 				}
 			}
 		],
@@ -1459,14 +1461,15 @@ ROLE = {
 			},
 			{
 				"name":"兰德索尔正义",
-				"text":"对目标造成120(+0.5自身攻击力)点真实伤害，目标当前生命值每降低1%则额外造成7点真实伤害",#斩杀效果
-				"tp_cost":65,
+				"text":"对目标造成120(+0.5自身攻击力)点真实伤害，目标生命值每降低1%则额外造成7点真实伤害，并将所造成伤害的30%转为生命值。",#斩杀效果
+				"tp_cost":60,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[],
 
 				"effect":{
 					EFFECT_HURT:(120, Attr.ATTACK, 0, 0.5, True),
-					EFFECT_ELIMINATE:(1, 7)
+					EFFECT_ELIMINATE:(1, 7),
+					EFFECT_LIFESTEAL:0.3,
 				}
 			},
 		],
@@ -1514,18 +1517,18 @@ ROLE = {
 			},
 			{
 				"name":"精神统一",
-				"text":"每自我回合永久提升自身35点攻击,持续3回合",
+				"text":"每自我回合永久提升自身40点攻击,持续3回合",
 				"tp_cost":35,
 				"trigger": TRIGGER_ME,
 				"passive":[],
 				
 				"effect":{
-					EFFECT_BUFF:[(BuffType.TurnSelfAttrAtkUp, 35, 3)],
+					EFFECT_BUFF:[(BuffType.TurnSelfAttrAtkUp, 40, 3)],
 				}
 			},
 			{
 				"name":"琉球犬重拳出击",
-				"text":"对目标造成200(+2.0自身攻击力)真实伤害，并将所造成伤害的30%转为生命值。使用后会降低自身250攻击力持续3个玩家回合",
+				"text":"对目标造成200(+2.0自身攻击力)真实伤害，并将所造成伤害的30%转为生命值。使用后会降低自身250攻击力持续1个自我回合",
 				"tp_cost":70,
 				"trigger":TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[0],
@@ -1540,7 +1543,7 @@ ROLE = {
 			{
 				"trigger":TRIGGER_ME,
 				"effect":{
-					EFFECT_BUFF:[(BuffType.NormalAttrAtkDown, -250, 3)],
+					EFFECT_BUFF:[(BuffType.NormalSelfAttrAtkDown, -250, 1)],
 				},
 			}
 		]
@@ -1551,7 +1554,7 @@ ROLE = {
 		"distance":12,
 		"attack":100,
 		"defensive":50,
-		"crit":10,
+		"crit":15,
 		"tp":0,
 
 		"active_skills" : [
@@ -1579,28 +1582,174 @@ ROLE = {
 			},
 			{
 				"name":"会心飞镖",
-				"text":"对目标造成100(+1.0自身攻击力)伤害",
+				"text":"对目标造成100(+1.25自身攻击力)伤害",
 				"tp_cost":20,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[],
 
 				"effect":{
-					EFFECT_HURT:(100, Attr.ATTACK, 0, 1.0, False)
+					EFFECT_HURT:(100, Attr.ATTACK, 0, 1.25, False)
 				}
 			},
 			{
 				"name":"一箭穿心",
-				"text":"对目标造成200(+2.0自身攻击力)伤害",
+				"text":"对目标造成200(+2.5自身攻击力)伤害，并将所造成伤害的30%转为生命值。",
 				"tp_cost":70,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[],
 
 				"effect":{
-					EFFECT_HURT:(200, Attr.ATTACK, 0, 2.0, True)
+					EFFECT_HURT:(200, Attr.ATTACK, 0, 2.5, False),
+					EFFECT_LIFESTEAL:0.3,
 				}
 			},
 		],
 		"passive_skills": []
+	},
+	1008:{
+		"name":"雪",
+		"health":800,
+		"distance":10,
+		"attack":110,
+		"defensive":50,
+		"crit":5,
+		"tp":10,
+
+		"active_skills" : [
+			{
+				"name":"普通攻击",
+				"text":"对目标造成0(+1.5自身最大TP)伤害",
+				"tp_cost":0,
+				"trigger": TRIGGER_SELECT_EXCEPT_ME,
+				"passive":[],
+
+				"effect":{
+					EFFECT_HURT:(0, Attr.MAX_TP, 0, 1, False)
+				}
+			},
+			{
+				"name":"我那令人目眩的美貌♪",
+				"text":"对目标造成50(+1.0自身攻击力)伤害，并使其致盲，下次攻击不会造成伤害",
+				"tp_cost":30,
+				"trigger": TRIGGER_SELECT_EXCEPT_ME,
+				"passive":[],
+
+				"effect":{
+					EFFECT_HURT:(50, Attr.ATTACK, 0, 1, False),
+					EFFECT_BUFF:[(BuffType.Blind, 0, 1)],
+				}
+			},
+			{
+				"name":"可爱的我会为你加油的♪",
+				"text":"全体回复10TP，自身额外回复20%最大TP和20TP最大值",
+				"tp_cost":30,
+				"trigger": TRIGGER_ALL,
+				"passive":[0],
+
+				"effect":{
+					EFFECT_ATTR_CHANGE:[(Attr.NOW_TP, 10, 0, 0)],
+				}
+			},
+			{
+				"name":"拜倒在我的美貌之下吧！",
+				"text":"自身增加50TP和50TP最大值，对自己外所有玩家造成100(+2.0自身当前TP)伤害，并降低10TP。所造成伤害的20%将转换为生命值",
+				"tp_cost":100,
+				"trigger": TRIGGER_ALL_EXCEPT_ME,
+				"passive":[1],
+
+				"effect":{
+					EFFECT_HURT:(100, Attr.NOW_TP, 0, 2.0, False),
+					EFFECT_ATTR_CHANGE:[(Attr.NOW_TP, -10, 0, 0)],
+					EFFECT_LIFESTEAL:0.2,
+				}
+			},
+		],
+		"passive_skills": [
+			{
+				"trigger":TRIGGER_ME,
+				"effect":{
+					EFFECT_ATTR_CHANGE:[
+						(Attr.MAX_TP, 20, 0, 0),
+						(Attr.NOW_TP, 0, Attr.MAX_TP, 0.2),
+					],
+				},
+			},
+			{
+				"trigger":TRIGGER_ME,
+				"effect":{
+					EFFECT_ATTR_CHANGE:[
+						(Attr.MAX_TP, 50, 0, 0),
+						(Attr.NOW_TP, 50, 0, 0),
+					],
+				},
+			}
+		]
+	},
+	1007:{
+		"name":"宫子",
+		"health":1200,
+		"distance":5,
+		"attack":80,
+		"defensive":200,
+		"crit":5,
+		"tp":0,
+
+		"active_skills" : [
+			{
+				"name":"普通攻击",
+				"text":"对目标造成10(+0.25自身最大生命值)伤害",
+				"tp_cost":10,
+				"trigger": TRIGGER_SELECT_EXCEPT_ME,
+				"passive":[],
+
+				"effect":{
+					EFFECT_HURT:(10, Attr.MAX_HEALTH, 0, 0.25, False)
+				}
+			},
+			{
+				"name":"我~好~恨~啊~",
+				"text":"免疫下次受到的伤害，且降低自身8%最大生命值",
+				"tp_cost":20,
+				"trigger": TRIGGER_ME,
+				"passive":[],
+
+				"effect":{
+					EFFECT_BUFF:[(BuffType.Ghost, 9999, 1)],#其实就是一个超高生命值的护盾
+					EFFECT_ATTR_CHANGE:[(Attr.MAX_HEALTH, -1, Attr.MAX_HEALTH, 0.08)],
+				}
+			},
+			{
+				"name":"点心时间到了~",
+				"text":"回复50(+0.3已损失生命值)生命值",
+				"tp_cost":20,
+				"trigger": TRIGGER_ME,
+				"passive":[],
+
+				"effect":{
+					EFFECT_ATTR_CHANGE:[(Attr.NOW_HEALTH, 50, Attr.COST_HEALTH, 0.3)],
+				}
+			},
+			{
+				"name":"把你变成布丁",
+				"text":"对目标造成100(+0.8自身攻击力)点真实伤害，目标生命值每降低1%则额外造成5点真实伤害，且自身增加10%生命值上限",
+				"tp_cost":60,
+				"trigger": TRIGGER_SELECT_EXCEPT_ME,
+				"passive":[0],
+
+				"effect":{
+					EFFECT_HURT:(100, Attr.ATTACK, 0, 0.8, True),
+					EFFECT_ELIMINATE:(1, 5)
+				}
+			},
+		],
+		"passive_skills": [
+			{
+				"trigger":TRIGGER_ME,
+				"effect":{
+					EFFECT_ATTR_CHANGE:[(Attr.MAX_HEALTH, 0, Attr.MAX_HEALTH, 0.1)],
+				},
+			}
+		]
 	},
 	1006:{
 		"name":"茜里",
@@ -1637,25 +1786,25 @@ ROLE = {
 			},
 			{
 				"name":"暗影打击",
-				"text":"对目标造成100(+1.0自身攻击力)伤害，并降低目标35点护甲持续12回合",
+				"text":"对目标造成100(+1.0自身攻击力)伤害，并降低目标35点护甲",
 				"tp_cost":20,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[],
 
 				"effect":{
 					EFFECT_HURT:(100, Attr.ATTACK, 0, 1.0, False),
-					EFFECT_BUFF:[(BuffType.NormalAttrDefDown, -35, 12)],
+					EFFECT_ATTR_CHANGE:[(Attr.DEFENSIVE, -35, 0, 0)],
 				}
 			},
 			{
 				"name":"甜蜜恶魔声援",
-				"text":"自身增加200点攻击力，持续1回合，并继续下一回合",
+				"text":"自身增加260点攻击力，持续1回合，并继续下一回合",
 				"tp_cost":50,
 				"trigger": TRIGGER_ME,
 				"passive":[],
 
 				"effect":{
-					EFFECT_BUFF:[(BuffType.NormalAttrAtkUp, 200, 1)],
+					EFFECT_BUFF:[(BuffType.NormalAttrAtkUp, 260, 1)],
 					EFFECT_LOCKTURN:1,
 				}
 			}
@@ -1685,14 +1834,14 @@ ROLE = {
 			},
 			{
 				"name":"大杀四方",
-				"text":"以自身为中心对半径5以内所有玩家造成150(+0.5自身攻击力)伤害，并将所造成伤害的50%转换为生命值",
+				"text":"以自身为中心对半径5以内所有玩家造成150(+0.5自身攻击力)伤害，并将所造成伤害的75%转换为生命值",
 				"tp_cost":20,
 				"trigger": TRIGGER_ME,
 				"passive":[],
 
 				"effect":{
 					EFFECT_HURT:(150, Attr.ATTACK, 0, 0.5, False),
-					EFFECT_LIFESTEAL:0.5,
+					EFFECT_LIFESTEAL:0.75,
 					EFFECT_AOE:(5, False),
 				}
 			},
@@ -1710,14 +1859,14 @@ ROLE = {
 			},
 			{
 				"name":"虎之英雄轰炸",
-				"text":"跳到目标身边，以自身为中心对半径6以内所有玩家造成150(+1.5自身攻击力)真实伤害，并为自己增加一个200生命值的护盾（可触发1次）",
-				"tp_cost":50,
+				"text":"跳到目标身边，以自身为中心对半径7以内所有玩家造成150(+1.5自身攻击力)真实伤害，并为自己增加一个200生命值的护盾（可触发1次）",
+				"tp_cost":40,
 				"trigger": TRIGGER_ME,
 				"passive":[0,1],
 
 				"effect":{
 					EFFECT_HURT:(150, Attr.ATTACK, 0, 1.5, True),
-					EFFECT_AOE:(6, False)
+					EFFECT_AOE:(7, False)
 				}
 			},
 		],
@@ -1790,13 +1939,13 @@ ROLE = {
 			},
 			{
 				"name":"大炸弹",
-				"text":"对场上所有玩家造成200(+2.00自身攻击力)伤害（包括自己），并赋予自己外所有人每回合降低70生命值的灼烧状态",
+				"text":"对场上所有玩家造成200(+2.0自身攻击力)伤害（包括自己），并赋予自己外所有人每回合降低70生命值的灼烧状态",
 				"tp_cost":70,
 				"trigger": TRIGGER_ALL,
 				"passive":[0],
 
 				"effect":{
-					EFFECT_HURT:(200, Attr.ATTACK, 0, 2.00, False)
+					EFFECT_HURT:(200, Attr.ATTACK, 0, 2.0, False)
 				}
 			}
 		],
@@ -1821,37 +1970,37 @@ ROLE = {
 		"active_skills" : [
 			{
 				"name":"普通攻击",
-				"text":"对目标造成0(+0.8自身攻击力)真实伤害",
+				"text":"对目标造成0(+1.0自身攻击力)真实伤害",
 				"tp_cost":0,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[],
 
 				"effect":{
-					EFFECT_HURT:(0, Attr.ATTACK, 0, 0.8, True)
+					EFFECT_HURT:(0, Attr.ATTACK, 0, 1.0, True)
 				}
 			},
 			{
 				"name":"破甲突刺",
-				"text":"无视距离，对离自己最近的目标造成50(+20%目标最大生命值)伤害，并降低目标20%防御力",
+				"text":"无视距离，对离自己最近的目标造成50(+20%目标最大生命值)伤害，并降低目标50%防御力",
 				"tp_cost":20,
 				"trigger": TRIGGER_NEAR,
 				"passive":[],
 
 				"effect":{
 					EFFECT_HURT:(50, Attr.MAX_HEALTH, 1, 0.20, False),
-					EFFECT_ATTR_CHANGE:[(Attr.DEFENSIVE, -1, Attr.DEFENSIVE, 0.2)],
+					EFFECT_ATTR_CHANGE:[(Attr.DEFENSIVE, -1, Attr.DEFENSIVE, 0.5)],
 				}
 			},
 			{
 				"name":"极东骑术",
-				"text":"为自己增加一个250的护盾（只可触发1次），并增加10%攻击力，且继续下一回合",
+				"text":"为自己增加一个250的护盾（只可触发1次），并增加15%攻击力，且继续下一回合",
 				"tp_cost":40,
 				"trigger": TRIGGER_ME,
 				"passive":[],
 
 				"effect":{
 					EFFECT_BUFF:[(BuffType.Shield, 250, 1)],
-					EFFECT_ATTR_CHANGE:[(Attr.ATTACK, 0, Attr.ATTACK, 0.1)],
+					EFFECT_ATTR_CHANGE:[(Attr.ATTACK, 0, Attr.ATTACK, 0.15)],
 					EFFECT_LOCKTURN:1,
 				}
 			},
@@ -1881,7 +2030,7 @@ ROLE = {
 	},
 	1002:{
 		"name":"优衣",
-		"health":1050,
+		"health":1000,
 		"distance":8,
 		"attack":80,
 		"defensive":60,
@@ -1902,7 +2051,7 @@ ROLE = {
 			},
 			{
 				"name":"花瓣射击",
-				"text":"对目标造成75(+2.0自身攻击力)伤害，并降低目标70点攻击力3回合和10点TP",
+				"text":"对目标造成75(+2.0自身攻击力)伤害，并降低目标70点攻击力，持续3个自我回合，且降低其10点TP",
 				"tp_cost":20,
 				"trigger": TRIGGER_SELECT_EXCEPT_ME,
 				"passive":[],
@@ -1910,8 +2059,7 @@ ROLE = {
 				"effect":{
 					EFFECT_HURT:(75, Attr.ATTACK, 0, 2.0, False),
 					EFFECT_BUFF:[(BuffType.NormalSelfAttrAtkDown, -70, 3)],
-					EFFECT_ATTR_CHANGE:[
-						(Attr.NOW_TP, -10, 0, 0)],
+					EFFECT_ATTR_CHANGE:[(Attr.NOW_TP, -10, 0, 0)],
 				}
 			},
 			{

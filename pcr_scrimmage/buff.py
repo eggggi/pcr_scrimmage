@@ -22,6 +22,7 @@ class BuffTriggerType(IntEnum):
 class BuffEffectType(IntEnum):
 	Attr		= 1		#属性变化型buff，属性的升降
 	Shield		= 2		#护盾，配合 BuffTriggerType.Hurt 使用，数值为护盾值
+	Blind		= 3		#致盲，配合 BuffTriggerType.Attack 使用，攻击不会造成伤害，不需要数值
 
 #buff类型
 # 数字第1位是BuffTriggerType，第3位是BuffEffectType，最后两位在1 3位相同时递增
@@ -44,8 +45,10 @@ class BuffType(IntEnum):
 	TurnAttrHelDown2		= 20104
 	TurnAttrTPUp			= 20105
 	TurnAttrDefDown			= 20106
+	TurnAttrHelUp			= 20107
 
 	Shield					= 30201
+	Ghost					= 30202
 
 	NormalSelfAttrAtkDown	= 40101
 	NormalSelfAttrAtkUp		= 40102
@@ -56,6 +59,7 @@ class BuffType(IntEnum):
 
 	AttackAttrCritUp		= 60101
 	AttackAttrCritHurtUp	= 60102
+	Blind					= 60301
 
 Buff = {
 	BuffType.TenRouHaDanKen:{
@@ -172,11 +176,25 @@ Buff = {
 
 		'attr_type':Attr.DEFENSIVE,
 	},
+	BuffType.TurnAttrHelUp:{
+		'name':'治愈',
+		'text':'每回合回复{0}点生命值，持续{1}个玩家回合',
+		'trigger_type':BuffTriggerType.Turn,
+		'effect_type':BuffEffectType.Attr,
+
+		'attr_type':Attr.NOW_HEALTH,
+	},
 
 
 	BuffType.Shield:{
 		'name':'护盾',
 		'text':'增加一个能承受{0}伤害的护盾，可触发{1}次',
+		'trigger_type':BuffTriggerType.Hurt,
+		'effect_type':BuffEffectType.Shield,
+	},
+	BuffType.Ghost:{
+		'name':'幽灵状态',
+		'text':'免疫下一次受到的伤害，可触发{1}次',
 		'trigger_type':BuffTriggerType.Hurt,
 		'effect_type':BuffEffectType.Shield,
 	},
@@ -238,5 +256,11 @@ Buff = {
 		'effect_type':BuffEffectType.Attr,
 
 		'attr_type':Attr.CRIT_HURT,
+	},
+	BuffType.Blind:{
+		'name':'致盲',
+		'text':'下{1}次攻击无法造成伤害',
+		'trigger_type':0,
+		'effect_type':BuffEffectType.Blind,
 	},
 }

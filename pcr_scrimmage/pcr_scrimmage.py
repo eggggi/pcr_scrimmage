@@ -29,7 +29,7 @@ from hoshino import R, Service, priv, log
 from hoshino.modules.priconne import chara
 
 from .attr import Attr, AttrTextChange
-from .buff import BuffEffectType, BuffTriggerType, Buff
+from .buff import BuffEffectType, BuffTriggerType, Buff, BuffType
 from .runway_case import (CASE_NONE, CASE_ATTACK, CASE_DEFENSIVE, CASE_HEALTH, 
 						  CASE_MOVE, CASE_TP, RUNWAY_CASE)
 from .role import (EFFECT_BUFF, EFFECT_BUFF_BY_BT, EFFECT_DIZZINESS, EFFECT_HIT_BACK, EFFECT_JUMP, EFFECT_SKILL_CHANGE,
@@ -180,6 +180,8 @@ class Role:
 			self.attr[Attr.NOW_TP] = role_data['tp']
 			self.attr[Attr.MAX_TP] = MAX_TP
 
+			self.attr[Attr.COST_HEALTH] = 0
+
 			self.active_skills = role_data['active_skills']
 			self.passive_skills = role_data['passive_skills']
 
@@ -217,6 +219,10 @@ class Role:
 		if attr_type == Attr.CRIT and self.attr[Attr.CRIT] > MAX_CRIT:
 			#不能超过最大暴击
 			self.attr[Attr.CRIT] = MAX_CRIT
+		
+		#已消耗生命值特殊处理
+		if attr_type == Attr.NOW_HEALTH:
+			self.attr[Attr.COST_HEALTH] = self.attr[Attr.MAX_HEALTH] - self.attr[Attr.NOW_HEALTH]
 
 		if self.attr[attr_type] <= 0:
 			self.attr[attr_type] = 0
@@ -271,7 +277,7 @@ class Role:
 		for keys in self.buff.keys():
 			buff_keys.append(keys)
 		for buff_type in buff_keys:
-			if self.buff[buff_type][1] == 0 :
+			if self.buff[buff_type][1] <= 0 :
 				self.deleteBuff(buff_type)
 
 	#通过触发类型触发buff
@@ -280,7 +286,7 @@ class Role:
 			need_trigger_type = Buff[buff_type]['trigger_type']
 			if need_trigger_type == trigger_type:
 				effect_type = Buff[buff_type]['effect_type']
-				num = self.buffEffect(trigger_type, effect_type, buff_type, self.buff[buff_type], num)
+				num = self.buffEffect(trigger_type, effect_type, buff_type, num)
 			if len(self.buff) == 0 : break
 		return num
 
@@ -289,30 +295,31 @@ class Role:
 		trigger_type = Buff[buff_type]['trigger_type']
 		effect_type = Buff[buff_type]['effect_type']
 		if buff_type in self.buff:
-			buff_info = self.buff[buff_type]
-			num = self.buffEffect(trigger_type, effect_type, buff_type, buff_info, num)
+			num = self.buffEffect(trigger_type, effect_type, buff_type, num)
 		return num
 
 	#buff效果生效
-	def buffEffect(self, trigger_type, effect_type, buff_type, info, num):
+	def buffEffect(self, trigger_type, effect_type, buff_type, num):
 		if effect_type == BuffEffectType.Attr:
 			attr_type = Buff[buff_type]['attr_type']
 			if (trigger_type == BuffTriggerType.Normal or 
 				trigger_type == BuffTriggerType.NormalSelf or 
 				trigger_type == BuffTriggerType.Attack):
-				if info[2] == 0:
+				if self.buff[buff_type][2] == 0:
 					old_num = self.attr[attr_type]
-					new_num = self.attrChange(attr_type, info[0])
-					info[2] = 1
-					info[3] = new_num - old_num
+					new_num = self.attrChange(attr_type, self.buff[buff_type][0])
+					self.buff[buff_type][2] = 1
+					self.buff[buff_type][3] = new_num - old_num
 			else:
-				self.attrChange(attr_type, info[0])
+				self.attrChange(attr_type, self.buff[buff_type][0])
 		elif effect_type == BuffEffectType.Shield:
-			num += info[0]
+			num += self.buff[buff_type][0]
+			self.buff[buff_type][0] += num - self.buff[buff_type][0]
 			if num > 0:num = 0
+		elif effect_type == BuffEffectType.Blind:
+			num = 0
 
-		info[1] -= 1
-		self.buff[buff_type] = info
+		self.buff[buff_type][1] -= 1
 
 		return num
 
@@ -512,7 +519,6 @@ class PCRScrimmage:
 		self.rank[len(self.now_playing_players)] = player.user_id
 		if player.user_id in self.now_playing_players:
 			self.now_playing_players.remove(player.user_id)
-		player.buff.clear()
 		if len(self.now_playing_players) == 1:
 			self.rank[1] = self.now_playing_players[0]
 			self.now_statu = NOW_STATU_WIN
@@ -526,8 +532,8 @@ class PCRScrimmage:
 
 		for iter_player_id in self.now_playing_players:	#每丢1次色子为一个回合
 			iter_player = self.getPlayerObj(iter_player_id)
-			iter_player.attrChange(Attr.NOW_TP, ONE_ROUND_TP)
 			iter_player.deleteInvalidBuff()
+			iter_player.attrChange(Attr.NOW_TP, ONE_ROUND_TP)
 			iter_player.buffTriggerByTriggerType(BuffTriggerType.Normal)
 			iter_player.buffTriggerByTriggerType(BuffTriggerType.Turn)
 			if iter_player_id == player_id:
@@ -541,6 +547,12 @@ class PCRScrimmage:
 				self.getPlayerObj(iter_player_id).attrChange(Attr.DISTANCE, ROUND_DISTANCE)
 				self.getPlayerObj(iter_player_id).attrChange(Attr.ATTACK, ROUND_ATTACK)
 			self.dice_num = 1
+
+		if player.now_stage == NOW_STAGE_OUT:
+			await bot.send(ev, f'[CQ:at,qq={player.user_id}]出局')
+			self.turnChange()	#回合切换
+			self.refreshNowImageStatu()	#刷新当前显示状态
+			return
 
 		await self.caseTrigger(player, bot, ev)
 
@@ -892,7 +904,7 @@ class PCRScrimmage:
 		addition_prop = skill_effect[EFFECT_HURT][3]					#加成比例
 		is_real 	  = skill_effect[EFFECT_HURT][4]					#是否是真实伤害
 
-		self.getPlayerObj(use_skill_player.user_id).buffTriggerByTriggerType(BuffTriggerType.Attack)
+		use_skill_player.buffTriggerByTriggerType(BuffTriggerType.Attack)
 		crit_flag = random.choice(range(0, MAX_CRIT)) < use_skill_player.attr[Attr.CRIT]
 
 		if addition_type != 0 and addition_prop != 0 :				#计算加成后的数值
@@ -922,6 +934,8 @@ class PCRScrimmage:
 			use_skill_player.attrChange(Attr.NOW_HEALTH, add)
 			back_msg.append(f'{uid2card(use_skill_player.user_id, self.user_card_dict)}增加了{add}点生命值')
 
+		#判断一下是否有致盲buff
+		num = use_skill_player.buffTriggerByBuffType(BuffType.Blind, num)
 
 		num = math.floor(num)	#小数数值向下取整
 		num = 0 - num			#变回负数，代表扣血
