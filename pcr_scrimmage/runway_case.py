@@ -9,6 +9,7 @@
 	range	触发后在这个范围随机一个数值
 '''
 
+from .attr import Attr
 
 #事件编号 编号顺序和RUNWAY_CASE对应
 CASE_NONE = 0
@@ -17,6 +18,7 @@ CASE_DEFENSIVE = 2	#防御力事件
 CASE_ATTACK = 3		#攻击力事件
 CASE_TP = 4			#tp值事件
 CASE_MOVE = 5		#移动位置事件
+CASE_CRIT = 6		#暴击率事件
 
 RUNWAY_CASE = [
 	{
@@ -29,30 +31,41 @@ RUNWAY_CASE = [
 		"text":"{0}了{1}点生命值",
 		"name":"生",
 		"color":(30,230,100),
-		"range":(-100,100)
+		"range":(-100,100),
+		"attr":Attr.NOW_HEALTH
 	},
 	{
 		"text":"{0}了{1}点防御力",
 		"name":"防",
 		"color":(225,195,0),
-		"range":(-30,50)
+		"range":(-30,50),
+		"attr":Attr.DEFENSIVE
 	},
 	{
 		"text":"{0}了{1}点攻击力",
 		"name":"攻",
 		"color":(255,0,0),
-		"range":(-50,50)
+		"range":(-50,50),
+		"attr":Attr.ATTACK
 	},
 	{
 		"text":"{0}了{1}点TP值",
 		"color":(30,144,255),
 		"name":"tp",
-		"range":(-30,30)
+		"range":(-20,20),
+		"attr":Attr.NOW_TP
 	},
 	{
 		"text":"向{0}移动了{1}步",
 		"name":"移",
 		"color":(100,100,100),
 		"range":(-10,10)
+	},
+	{
+		"text":"{0}了{1}%暴击率",
+		"name":"暴",
+		"color":(255,0,255),
+		"range":(-10,10),
+		"attr":Attr.CRIT
 	}
 ]
